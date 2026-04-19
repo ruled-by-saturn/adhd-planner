@@ -12,24 +12,10 @@ export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPre
   const { attributes, listeners, setNodeRef,
           transform, transition, isDragging } = useSortable({ id: task.id })
 
-  const timerRef = useRef(null)
-  const didLongPress = useRef(false)
-
-  function startPress() {
-    didLongPress.current = false
-    timerRef.current = setTimeout(() => {
-      didLongPress.current = true
-      onLongPress(task.id)
-    }, 500)
-  }
-
-  function cancelPress() {
-    clearTimeout(timerRef.current)
-  }
-
-  function handleToggle() {
-    if (!didLongPress.current) onToggle(task.id)
-  }
+function handleContextMenu(e) {
+  e.preventDefault()
+  onLongPress(task.id)
+}
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -41,20 +27,16 @@ export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPre
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
-      className={`task-card${task.done ? ' done' : ''}`}
-      onTouchStart={startPress}
-      onTouchEnd={cancelPress}
-      onMouseDown={startPress}
-      onMouseUp={cancelPress}
-      onMouseLeave={cancelPress}
+  ref={setNodeRef}
+  style={style}
+  className={`task-card${task.done ? ' done' : ''}`}
+  onContextMenu={handleContextMenu}
     >
       <span className="drag-handle" {...attributes} {...listeners}>⋮</span>
       <button
-        className={`check${task.done ? ' checked' : ''}`}
-        onClick={handleToggle}
-      >
+  className={`check${task.done ? ' checked' : ''}`}
+  onClick={() => onToggle(task.id)}
+    >
         {task.done && <span className="checkmark" />}
       </button>
       <div className="task-body">
