@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -11,10 +12,24 @@ export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPre
   const { attributes, listeners, setNodeRef,
           transform, transition, isDragging } = useSortable({ id: task.id })
 
-function handleContextMenu(e) {
-  e.preventDefault()
-  onLongPress(task.id)
-}
+  const timerRef = useRef(null)
+  const moved = useRef(false)
+
+  function onTouchStart(e) {
+    moved.current = false
+    timerRef.current = setTimeout(() => {
+      if (!moved.current) onLongPress(task.id)
+    }, 600)
+  }
+
+  function onTouchMove() {
+    moved.current = true
+    clearTimeout(timerRef.current)
+  }
+
+  function onTouchEnd() {
+    clearTimeout(timerRef.current)
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -25,20 +40,21 @@ function handleContextMenu(e) {
   const pill = PILL[task.priority] || PILL.Someday
 
   return (
-    <div
-  ref={setNodeRef}
-  style={style}
-  className={`task-card${task.done ? ' done' : ''}`}
-  onContextMenu={handleContextMenu}
-    >
+    <div ref={setNodeRef} style={style} className={`task-card${task.done ? ' done' : ''}`}>
       <span className="drag-handle" {...attributes} {...listeners}>⋮</span>
       <button
-  className={`check${task.done ? ' checked' : ''}`}
-  onClick={() => onToggle(task.id)}
-    >
+        className={`check${task.done ? ' checked' : ''}`}
+        onClick={() => onToggle(task.id)}
+      >
         {task.done && <span className="checkmark" />}
       </button>
-      <div className="task-body">
+      <div
+        className="task-body"
+        onDoubleClick={() => onLongPress(task.id)}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <span className="task-text">{task.text}</span>
         {task.time && <span className="task-time">{task.time}</span>}
       </div>
