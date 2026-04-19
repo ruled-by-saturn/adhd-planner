@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function getDateKey(date) {
@@ -80,4 +82,3 @@ export function MonthView({ tasksByDay, onSelectDay, onClose, initialDate }) {
   )
 }
 
-import { useState } from 'react'
