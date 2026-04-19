@@ -1,3 +1,5 @@
+import { RescheduleSheet } from './RescheduleSheet'
+
 import { MonthView } from './MonthView'
 
 import { useState, useRef } from 'react'
@@ -53,6 +55,7 @@ export default function App() {
   const [newPriority, setNewPriority] = useState('Now')
   const [newTime, setNewTime] = useState('')
   const [showMonth, setShowMonth] = useState(false)
+  const [reschedulingId, setReschedulingId] = useState(null)
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
 
@@ -88,6 +91,17 @@ export default function App() {
   function changePriority(id, priority) {
     setTasks(tasks.map(t => t.id === id ? { ...t, priority } : t))
   }
+
+  function rescheduleTask(taskId, targetDateKey) {
+  const task = tasks.find(t => t.id === taskId)
+  if (!task) return
+  setTasksByDay(prev => ({
+    ...prev,
+    [dateKey]: prev[dateKey].filter(t => t.id !== taskId),
+    [targetDateKey]: [...(prev[targetDateKey] || []), task],
+  }))
+  setReschedulingId(null)
+}
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),

@@ -273,3 +273,96 @@ body {
 .dot-soon    { background: #BA7517; }
 .dot-someday { background: #534AB7; }
 .dot-done    { opacity: 0.35; }
+
+/* Reschedule bottom sheet */
+.sheet-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+
+.sheet {
+  background: #fff;
+  width: 100%; max-width: 430px;
+  border-radius: 20px 20px 0 0;
+  padding: 12px 16px 36px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: #e5e4df; align-self: center; margin-bottom: 4px;
+}
+
+.sheet-title {
+  font-size: 18px; font-weight: 500; color: #1a1a1a;
+}
+
+.sheet-task-name {
+  font-size: 13px; color: #888;
+  background: #f9f8f5; border-radius: 8px;
+  padding: 8px 12px; line-height: 1.4;
+}
+
+.sheet-options {
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.sheet-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; border-radius: 12px;
+  border: 0.5px solid #e5e4df; background: #fff;
+  cursor: pointer; transition: background 0.1s;
+}
+
+.sheet-option:active { background: #f0eff9; }
+
+.sheet-option-label {
+  font-size: 15px; color: #1a1a1a;
+}
+
+.sheet-option-sub {
+  font-size: 12px; color: #aaa;
+}
+
+.sheet-divider {
+  height: 0.5px; background: #e5e4df;
+}
+
+.sheet-custom {
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.sheet-custom-label {
+  font-size: 12px; color: #aaa; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.sheet-custom-row {
+  display: flex; gap: 8px;
+}
+
+.sheet-date-input {
+  flex: 1; border: 0.5px solid #d3d1c7;
+  border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; background: #f9f8f5;
+  color: #1a1a1a; outline: none;
+}
+
+.sheet-confirm {
+  padding: 10px 18px; border-radius: 10px;
+  background: #534AB7; color: #fff;
+  border: none; font-size: 14px; cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.sheet-confirm:disabled {
+  opacity: 0.35; cursor: default;
+}
+
+.sheet-cancel {
+  padding: 12px; border-radius: 12px;
+  border: 0.5px solid #e5e4df; background: #fff;
+  font-size: 15px; color: #888; cursor: pointer;
+}
