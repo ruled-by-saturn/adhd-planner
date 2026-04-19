@@ -1,9 +1,6 @@
-import { RescheduleSheet } from './RescheduleSheet'
-
-import { MonthView } from './MonthView'
-
 import { useState, useRef, useEffect } from 'react'
-
+import { RescheduleSheet } from './RescheduleSheet'
+import { MonthView } from './MonthView'
 import {
   DndContext, closestCenter, TouchSensor,
   MouseSensor, useSensor, useSensors
@@ -48,31 +45,28 @@ const SAMPLE = {
   ]
 }
 
-const [tasksByDay, setTasksByDay] = useState(() => {
-  try {
-    const stored = localStorage.getItem('tasksByDay')
-    return stored ? JSON.parse(stored) : SAMPLE
-  } catch {
-    return SAMPLE
-  }
-})
-
 export default function App() {
   const [dayOffset, setDayOffset] = useState(0)
-  const [tasksByDay, setTasksByDay] = useState(SAMPLE)
+  const [tasksByDay, setTasksByDay] = useState(() => {
+    try {
+      const stored = localStorage.getItem('tasksByDay')
+      return stored ? JSON.parse(stored) : SAMPLE
+    } catch {
+      return SAMPLE
+    }
+  })
   const [sortMode, setSortMode] = useState('priority')
   const [input, setInput] = useState('')
   const [newPriority, setNewPriority] = useState('Now')
   const [newTime, setNewTime] = useState('')
   const [showMonth, setShowMonth] = useState(false)
   const [reschedulingId, setReschedulingId] = useState(null)
-  
-  useEffect(() => {
-  localStorage.setItem('tasksByDay', JSON.stringify(tasksByDay))
-}, [tasksByDay])
-
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
+
+  useEffect(() => {
+    localStorage.setItem('tasksByDay', JSON.stringify(tasksByDay))
+  }, [tasksByDay])
 
   const dateKey = getDateKey(dayOffset)
   const tasks = tasksByDay[dateKey] || []
@@ -108,15 +102,15 @@ export default function App() {
   }
 
   function rescheduleTask(taskId, targetDateKey) {
-  const task = tasks.find(t => t.id === taskId)
-  if (!task) return
-  setTasksByDay(prev => ({
-    ...prev,
-    [dateKey]: prev[dateKey].filter(t => t.id !== taskId),
-    [targetDateKey]: [...(prev[targetDateKey] || []), task],
-  }))
-  setReschedulingId(null)
-}
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+    setTasksByDay(prev => ({
+      ...prev,
+      [dateKey]: prev[dateKey].filter(t => t.id !== taskId),
+      [targetDateKey]: [...(prev[targetDateKey] || []), task],
+    }))
+    setReschedulingId(null)
+  }
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -154,7 +148,7 @@ export default function App() {
     return acc
   }, {})
 
-    return (
+  return (
     <div className="app" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="topbar">
         <div className="day-nav">
@@ -164,10 +158,8 @@ export default function App() {
             <div className="date-sub">{formatDate(dayOffset)}</div>
           </div>
           <button className="nav-btn" onClick={() => setDayOffset(o => o + 1)}>›</button>
+          <button className="month-btn" onClick={() => setShowMonth(true)}>📅</button>
         </div>
-        <button className="month-btn" onClick={() => setShowMonth(true)}>
-          📅
-        </button>
         <div className="sort-toggle">
           <button className={sortMode === 'priority' ? 'sort-btn active' : 'sort-btn'}
             onClick={() => setSortMode('priority')}>Priority</button>
@@ -222,13 +214,13 @@ export default function App() {
         </div>
       </div>
 
-{reschedulingId && (
-  <RescheduleSheet
-    taskText={tasks.find(t => t.id === reschedulingId)?.text}
-    onReschedule={(date) => rescheduleTask(reschedulingId, date)}
-    onClose={() => setReschedulingId(null)}
-  />
-)}
+      {reschedulingId && (
+        <RescheduleSheet
+          taskText={tasks.find(t => t.id === reschedulingId)?.text}
+          onReschedule={(date) => rescheduleTask(reschedulingId, date)}
+          onClose={() => setReschedulingId(null)}
+        />
+      )}
 
       {showMonth && (
         <MonthView
