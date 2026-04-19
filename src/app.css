@@ -366,3 +366,8 @@ body {
   border: 0.5px solid #e5e4df; background: #fff;
   font-size: 15px; color: #888; cursor: pointer;
 }
+
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 100svh; font-size: 15px; color: #aaa;
+}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { RescheduleSheet } from './RescheduleSheet'
 import { MonthView } from './MonthView'
+import { supabase } from './supabase'
 import {
   DndContext, closestCenter, TouchSensor,
   MouseSensor, useSensor, useSensors
@@ -35,38 +36,36 @@ function formatDate(offset) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-const SAMPLE = {
-  [getDateKey(0)]: [
-    { id: '1', text: 'Take meds', priority: 'Now', done: true, time: '08:00' },
-    { id: '2', text: "Reply to Budi's email", priority: 'Now', done: false, time: '10:00' },
-    { id: '3', text: 'Buy groceries', priority: 'Soon', done: false, time: '14:00' },
-    { id: '4', text: 'Call the dentist', priority: 'Soon', done: false, time: '16:00' },
-    { id: '5', text: 'Reorganize bookshelf', priority: 'Someday', done: false, time: '' },
-  ]
-}
-
 export default function App() {
   const [dayOffset, setDayOffset] = useState(0)
-  const [tasksByDay, setTasksByDay] = useState(() => {
-    try {
-      const stored = localStorage.getItem('tasksByDay')
-      return stored ? JSON.parse(stored) : SAMPLE
-    } catch {
-      return SAMPLE
-    }
-  })
+  const [tasksByDay, setTasksByDay] = useState({})
   const [sortMode, setSortMode] = useState('priority')
   const [input, setInput] = useState('')
   const [newPriority, setNewPriority] = useState('Now')
   const [newTime, setNewTime] = useState('')
   const [showMonth, setShowMonth] = useState(false)
   const [reschedulingId, setReschedulingId] = useState(null)
+  const [loading, setLoading] = useState(true)
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
 
   useEffect(() => {
-    localStorage.setItem('tasksByDay', JSON.stringify(tasksByDay))
-  }, [tasksByDay])
+    async function loadTasks() {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('position')
+      if (error) { console.error(error); setLoading(false); return }
+      const byDay = {}
+      data.forEach(task => {
+        if (!byDay[task.date_key]) byDay[task.date_key] = []
+        byDay[task.date_key].push(task)
+      })
+      setTasksByDay(byDay)
+      setLoading(false)
+    }
+    loadTasks()
+  }, [])
 
   const dateKey = getDateKey(dayOffset)
   const tasks = tasksByDay[dateKey] || []
@@ -75,41 +74,53 @@ export default function App() {
     setTasksByDay(prev => ({ ...prev, [dateKey]: updated }))
   }
 
-  function addTask() {
+  async function addTask() {
     if (!input.trim()) return
     const task = {
       id: Date.now().toString(),
+      date_key: dateKey,
       text: input.trim(),
       priority: newPriority,
       done: false,
       time: newTime,
+      position: tasks.length,
     }
     setTasks([...tasks, task])
     setInput('')
     setNewTime('')
+    await supabase.from('tasks').insert(task)
   }
 
-  function toggleDone(id) {
+  async function toggleDone(id) {
+    const task = tasks.find(t => t.id === id)
+    if (!task) return
     setTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t))
+    await supabase.from('tasks').update({ done: !task.done }).eq('id', id)
   }
 
-  function deleteTask(id) {
+  async function deleteTask(id) {
     setTasks(tasks.filter(t => t.id !== id))
+    await supabase.from('tasks').delete().eq('id', id)
   }
 
-  function changePriority(id, priority) {
+  async function changePriority(id, priority) {
     setTasks(tasks.map(t => t.id === id ? { ...t, priority } : t))
+    await supabase.from('tasks').update({ priority }).eq('id', id)
   }
 
-  function rescheduleTask(taskId, targetDateKey) {
+  async function rescheduleTask(taskId, targetDateKey) {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
+    const targetTasks = tasksByDay[targetDateKey] || []
     setTasksByDay(prev => ({
       ...prev,
-      [dateKey]: prev[dateKey].filter(t => t.id !== taskId),
-      [targetDateKey]: [...(prev[targetDateKey] || []), task],
+      [dateKey]: (prev[dateKey] || []).filter(t => t.id !== taskId),
+      [targetDateKey]: [...targetTasks, { ...task, date_key: targetDateKey }],
     }))
     setReschedulingId(null)
+    await supabase.from('tasks')
+      .update({ date_key: targetDateKey, position: targetTasks.length })
+      .eq('id', taskId)
   }
 
   const sensors = useSensors(
@@ -117,12 +128,16 @@ export default function App() {
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
   )
 
-  function handleDragEnd(event) {
+  async function handleDragEnd(event) {
     const { active, over } = event
     if (active.id !== over?.id) {
       const oldIdx = tasks.findIndex(t => t.id === active.id)
       const newIdx = tasks.findIndex(t => t.id === over.id)
-      setTasks(arrayMove(tasks, oldIdx, newIdx))
+      const reordered = arrayMove(tasks, oldIdx, newIdx)
+      setTasks(reordered)
+      await supabase.from('tasks').upsert(
+        reordered.map((t, i) => ({ ...t, position: i }))
+      )
     }
   }
 
@@ -147,6 +162,8 @@ export default function App() {
     acc[p] = sortedTasks.filter(t => t.priority === p)
     return acc
   }, {})
+
+  if (loading) return <div className="loading">Loading...</div>
 
   return (
     <div className="app" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
