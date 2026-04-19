@@ -2,7 +2,8 @@ import { RescheduleSheet } from './RescheduleSheet'
 
 import { MonthView } from './MonthView'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+
 import {
   DndContext, closestCenter, TouchSensor,
   MouseSensor, useSensor, useSensors
@@ -47,6 +48,15 @@ const SAMPLE = {
   ]
 }
 
+const [tasksByDay, setTasksByDay] = useState(() => {
+  try {
+    const stored = localStorage.getItem('tasksByDay')
+    return stored ? JSON.parse(stored) : SAMPLE
+  } catch {
+    return SAMPLE
+  }
+})
+
 export default function App() {
   const [dayOffset, setDayOffset] = useState(0)
   const [tasksByDay, setTasksByDay] = useState(SAMPLE)
@@ -56,6 +66,11 @@ export default function App() {
   const [newTime, setNewTime] = useState('')
   const [showMonth, setShowMonth] = useState(false)
   const [reschedulingId, setReschedulingId] = useState(null)
+  
+  useEffect(() => {
+  localStorage.setItem('tasksByDay', JSON.stringify(tasksByDay))
+}, [tasksByDay])
+
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
 
@@ -171,14 +186,16 @@ export default function App() {
                     {grouped[p].map(t => (
                       <TaskCard key={t.id} task={t}
                         onToggle={toggleDone} onDelete={deleteTask}
-                        onChangePriority={changePriority} />
+                        onChangePriority={changePriority}
+                        onLongPress={setReschedulingId} />
                     ))}
                   </div>
                 ))
               : sortedTasks.map(t => (
                   <TaskCard key={t.id} task={t}
                     onToggle={toggleDone} onDelete={deleteTask}
-                    onChangePriority={changePriority} />
+                    onChangePriority={changePriority}
+                    onLongPress={setReschedulingId} />
                 ))
             }
           </SortableContext>
@@ -204,6 +221,14 @@ export default function App() {
             className="time-input" />
         </div>
       </div>
+
+{reschedulingId && (
+  <RescheduleSheet
+    taskText={tasks.find(t => t.id === reschedulingId)?.text}
+    onReschedule={(date) => rescheduleTask(reschedulingId, date)}
+    onClose={() => setReschedulingId(null)}
+  />
+)}
 
       {showMonth && (
         <MonthView
