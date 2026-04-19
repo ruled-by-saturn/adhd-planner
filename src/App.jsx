@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { RescheduleSheet } from './RescheduleSheet'
 import { MonthView } from './MonthView'
+import { Auth } from './Auth'
 import { supabase } from './supabase'
 import {
   DndContext, closestCenter, TouchSensor,
@@ -46,26 +47,40 @@ export default function App() {
   const [showMonth, setShowMonth] = useState(false)
   const [reschedulingId, setReschedulingId] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null)
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
 
   useEffect(() => {
-    async function loadTasks() {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .order('position')
-      if (error) { console.error(error); setLoading(false); return }
-      const byDay = {}
-      data.forEach(task => {
-        if (!byDay[task.date_key]) byDay[task.date_key] = []
-        byDay[task.date_key].push(task)
-      })
-      setTasksByDay(byDay)
-      setLoading(false)
-    }
-    loadTasks()
-  }, [])
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setUser(session?.user ?? null)
+    if (session?.user) loadTasks(session.user.id)
+    else setLoading(false)
+  })
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null)
+    if (session?.user) loadTasks(session.user.id)
+    else { setTasksByDay({}); setLoading(false) }
+  })
+
+  return () => subscription.unsubscribe()
+}, [])
+
+async function loadTasks(userId) {
+  const { data, error } = await supabase
+    .from('tasks').select('*')
+    .eq('user_id', userId)
+    .order('position')
+  if (error) { console.error(error); setLoading(false); return }
+  const byDay = {}
+  data.forEach(task => {
+    if (!byDay[task.date_key]) byDay[task.date_key] = []
+    byDay[task.date_key].push(task)
+  })
+  setTasksByDay(byDay)
+  setLoading(false)
+}
 
   const dateKey = getDateKey(dayOffset)
   const tasks = tasksByDay[dateKey] || []
@@ -84,6 +99,7 @@ export default function App() {
       done: false,
       time: newTime,
       position: tasks.length,
+      user_id: user.id,
     }
     setTasks([...tasks, task])
     setInput('')
@@ -164,10 +180,17 @@ export default function App() {
   }, {})
 
   if (loading) return <div className="loading">Loading...</div>
+  if (!user) return <Auth />
+
+    if (loading) return <div className="loading">Loading...</div>
+  if (!user) return <Auth />
 
   return (
     <div className="app" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="topbar">
+        <button className="signout-btn" onClick={() => supabase.auth.signOut()}>
+          Sign out
+        </button>
         <div className="day-nav">
           <button className="nav-btn" onClick={() => setDayOffset(o => o - 1)}>‹</button>
           <div className="day-info">

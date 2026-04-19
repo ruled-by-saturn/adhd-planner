@@ -371,3 +371,43 @@ body {
   display: flex; align-items: center; justify-content: center;
   height: 100svh; font-size: 15px; color: #aaa;
 }
+
+.auth-screen {
+  min-height: 100svh; display: flex;
+  align-items: center; justify-content: center;
+  background: #f5f4f0; padding: 24px;
+}
+
+.auth-card {
+  background: #fff; border-radius: 20px;
+  border: 0.5px solid #e5e4df;
+  padding: 40px 32px; text-align: center;
+  width: 100%; max-width: 340px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 12px;
+}
+
+.auth-icon { font-size: 40px; }
+
+.auth-title {
+  font-size: 22px; font-weight: 500; color: #1a1a1a;
+}
+
+.auth-sub { font-size: 14px; color: #aaa; }
+
+.google-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 20px; border-radius: 12px;
+  border: 0.5px solid #d3d1c7; background: #fff;
+  font-size: 15px; color: #1a1a1a; cursor: pointer;
+  margin-top: 8px; transition: background 0.1s;
+}
+
+.google-btn:hover { background: #f9f8f5; }
+
+.signout-btn {
+  position: absolute; top: 16px; right: 16px;
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 20px; border: 0.5px solid #d3d1c7;
+  background: transparent; color: #aaa; cursor: pointer;
+}
