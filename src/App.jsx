@@ -188,9 +188,7 @@ async function loadTasks(userId) {
   return (
     <div className="app" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="topbar">
-        <button className="signout-btn" onClick={() => supabase.auth.signOut()}>
-          Sign out
-        </button>
+        
         <div className="day-nav">
           <button className="nav-btn" onClick={() => setDayOffset(o => o - 1)}>‹</button>
           <div className="day-info">
@@ -201,10 +199,13 @@ async function loadTasks(userId) {
           <button className="month-btn" onClick={() => setShowMonth(true)}>📅</button>
         </div>
         <div className="sort-toggle">
+          <button className="signout-btn" onClick={() => supabase.auth.signOut()}>
+          Sign out
+        </button>
           <button className={sortMode === 'priority' ? 'sort-btn active' : 'sort-btn'}
             onClick={() => setSortMode('priority')}>Priority</button>
           <button className={sortMode === 'chrono' ? 'sort-btn active' : 'sort-btn'}
-            onClick={() => setSortMode('chrono')}>Chronological</button>
+            onClick={() => setSortMode('chrono')}>Chronological</button> 
         </div>
       </div>
 
