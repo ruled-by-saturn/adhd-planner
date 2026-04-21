@@ -1,24 +1,31 @@
 import { useState } from 'react'
 
-function addDays(dateKey, days) {
+function offsetFromToday(days) {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
+function addDaysFromDate(dateKey, days) {
   const d = new Date(dateKey + 'T00:00:00')
   d.setDate(d.getDate() + days)
   return d.toISOString().split('T')[0]
 }
 
-function formatShort(dateKey, days) {
+function formatShort(dateKey) {
   const d = new Date(dateKey + 'T00:00:00')
-  d.setDate(d.getDate() + days)
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 export function RescheduleSheet({ taskText, currentDate, onReschedule, onClose }) {
   const [customDate, setCustomDate] = useState('')
 
+  const tomorrow = offsetFromToday(1)
+  const nextWeek = addDaysFromDate(currentDate, 7)
+
   const options = [
-    { label: 'Tomorrow',  sub: formatShort(currentDate, 1), value: addDays(currentDate, 1) },
-    { label: 'In 2 days', sub: formatShort(currentDate, 2), value: addDays(currentDate, 2) },
-    { label: 'Next week', sub: formatShort(currentDate, 7), value: addDays(currentDate, 7) },
+    { label: 'Tomorrow',   sub: formatShort(tomorrow),  value: tomorrow  },
+    { label: 'Next week',  sub: formatShort(nextWeek),   value: nextWeek  },
   ]
 
   return (
@@ -46,7 +53,7 @@ export function RescheduleSheet({ taskText, currentDate, onReschedule, onClose }
               type="date"
               className="sheet-date-input"
               value={customDate}
-              min={addDays(currentDate, 1)}
+              min={offsetFromToday(1)}
               onChange={e => setCustomDate(e.target.value)}
             />
             <button
