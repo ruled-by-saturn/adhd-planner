@@ -406,12 +406,18 @@ body {
 .google-btn:hover { background: #f9f8f5; }
 
 .signout-btn {
-  position: absolute; top: 14px; right: 16px;
   width: 32px; height: 32px; border-radius: 50%;
   border: 0.5px solid #d3d1c7; background: transparent;
   color: #aaa; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: color 0.15s;
-  z-index: 11;
+  flex-shrink: 0; transition: color 0.15s;
 }
 .signout-btn:hover { color: #534AB7; border-color: #534AB7; }
+
+.month-btn {
+  width: 32px; height: 32px; border-radius: 20px;
+  border: 0.5px solid #d3d1c7;
+  background: transparent; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}

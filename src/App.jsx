@@ -188,30 +188,29 @@ async function loadTasks(userId) {
   return (
     <div className="app" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="topbar">
-        
-        <div className="day-nav">
-          <button className="nav-btn" onClick={() => setDayOffset(o => o - 1)}>‹</button>
-          <div className="day-info">
-            <div className="day-label">{formatDay(dayOffset)}</div>
-            <div className="date-sub">{formatDate(dayOffset)}</div>
-          </div>
-          <button className="nav-btn" onClick={() => setDayOffset(o => o + 1)}>›</button>
-          <button className="month-btn" onClick={() => setShowMonth(true)}>📅</button>
+      <div className="day-nav">
+        <button className="nav-btn" onClick={() => setDayOffset(o => o - 1)}>‹</button>
+        <div className="day-info">
+          <div className="day-label">{formatDay(dayOffset)}</div>
+          <div className="date-sub">{formatDate(dayOffset)}</div>
         </div>
-        <div className="sort-toggle">
-          <button className="signout-btn" onClick={() => supabase.auth.signOut()} title="Sign out">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </button>
-          <button className={sortMode === 'priority' ? 'sort-btn active' : 'sort-btn'}
-            onClick={() => setSortMode('priority')}>Priority</button>
-          <button className={sortMode === 'chrono' ? 'sort-btn active' : 'sort-btn'}
-            onClick={() => setSortMode('chrono')}>Chronological</button> 
-        </div>
+        <button className="nav-btn" onClick={() => setDayOffset(o => o + 1)}>›</button>
+        <button className="signout-btn" onClick={() => supabase.auth.signOut()} title="Sign out">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
       </div>
+      <div className="sort-toggle">
+        <button className={sortMode === 'priority' ? 'sort-btn active' : 'sort-btn'}
+          onClick={() => setSortMode('priority')}>Priority</button>
+        <button className={sortMode === 'chrono' ? 'sort-btn active' : 'sort-btn'}
+          onClick={() => setSortMode('chrono')}>Chronological</button>
+        <button className="month-btn" onClick={() => setShowMonth(true)}>📅</button>
+      </div>
+    </div>
 
       <div className="task-list">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
