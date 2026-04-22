@@ -14,7 +14,7 @@ export function Auth() {
     <div className="auth-screen">
       <div className="auth-card">
         <div className="auth-icon">📅</div>
-        <h1 className="auth-title">ADHD Planner</h1>
+        <h1 className="auth-title">Jingga's ADHD Planner :D</h1>
         <p className="auth-sub">Your calm, flexible daily planner</p>
         <button className="google-btn" onClick={signInWithGoogle}>
           <svg width="18" height="18" viewBox="0 0 48 48">
