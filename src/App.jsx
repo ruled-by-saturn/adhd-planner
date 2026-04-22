@@ -2,7 +2,9 @@ import { useState, useRef, useEffect } from 'react'
 import { RescheduleSheet } from './RescheduleSheet'
 import { MonthView } from './MonthView'
 import { Auth } from './Auth'
+import { BrainDump } from './BrainDump'
 import { supabase } from './supabase'
+
 import {
   DndContext, closestCenter, TouchSensor,
   MouseSensor, useSensor, useSensors
@@ -50,6 +52,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
+  const [showBrainDump, setShowBrainDump] = useState(false)
 
   useEffect(() => {
   supabase.auth.getSession().then(({ data: { session } }) => {
@@ -137,6 +140,26 @@ async function loadTasks(userId) {
     await supabase.from('tasks')
       .update({ date_key: targetDateKey, position: targetTasks.length })
       .eq('id', taskId)
+  }
+
+  async function acceptBrainDumpTask(task) {
+  const targetDate = task.date || getDateKey(0)
+  const existing = tasksByDay[targetDate] || []
+  const newTask = {
+    id: Date.now().toString(),
+    date_key: targetDate,
+    text: task.text,
+    priority: task.priority,
+    done: false,
+    time: task.time || '',
+    position: existing.length,
+    user_id: user.id,
+  }
+  setTasksByDay(prev => ({
+    ...prev,
+    [targetDate]: [...(prev[targetDate] || []), newTask],
+  }))
+  await supabase.from('tasks').insert(newTask)
   }
 
   const sensors = useSensors(
@@ -257,6 +280,21 @@ async function loadTasks(userId) {
             className="time-input" />
         </div>
       </div>
+
+      <button className="fab" onClick={() => setShowBrainDump(true)}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </button>
+
+{showBrainDump && (
+  <BrainDump
+    onAccept={acceptBrainDumpTask}
+    onClose={() => setShowBrainDump(false)}
+  />
+)}
 
       {reschedulingId && (
         <RescheduleSheet

@@ -421,3 +421,197 @@ body {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
+
+/* Floating action button */
+.fab {
+  position: fixed;
+  bottom: 130px;
+  left: 50%;
+  transform: translateX(calc(-50% + 175px));
+  width: 48px; height: 48px; border-radius: 50%;
+  background: #534AB7; border: none; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 50;
+  box-shadow: 0 2px 12px rgba(83,74,183,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.fab:active {
+  transform: translateX(calc(-50% + 175px)) scale(0.95);
+}
+
+/* Brain dump overlay */
+.bd-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+
+.bd-sheet {
+  background: #fff;
+  width: 100%; max-width: 430px;
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px 40px;
+  display: flex; flex-direction: column; gap: 14px;
+  max-height: 90svh; overflow-y: auto;
+}
+
+.bd-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+
+.bd-title {
+  font-size: 20px; font-weight: 500; color: #1a1a1a;
+}
+
+.bd-sub {
+  font-size: 13px; color: #aaa; margin-top: 2px;
+}
+
+.bd-textarea-wrap {
+  position: relative;
+  border: 0.5px solid #d3d1c7; border-radius: 12px;
+  overflow: hidden; transition: border-color 0.2s;
+}
+
+.bd-textarea-wrap.listening {
+  border-color: #534AB7;
+}
+
+.bd-textarea {
+  width: 100%; padding: 12px 14px;
+  font-size: 15px; line-height: 1.6;
+  border: none; outline: none; resize: none;
+  background: #f9f8f5; color: #1a1a1a;
+  font-family: inherit;
+}
+
+.bd-listening-badge {
+  position: absolute; bottom: 8px; right: 10px;
+  font-size: 11px; color: #534AB7;
+  display: flex; align-items: center; gap: 5px;
+  font-weight: 500;
+}
+
+.bd-pulse {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #534AB7;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.bd-actions {
+  display: flex; gap: 10px;
+}
+
+.bd-mic-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 16px; border-radius: 10px;
+  border: 0.5px solid #d3d1c7; background: #fff;
+  font-size: 14px; color: #888; cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bd-mic-btn.active {
+  border-color: #534AB7; color: #534AB7;
+  background: #f0eff9;
+}
+
+.bd-process-btn {
+  flex: 1; padding: 10px 16px; border-radius: 10px;
+  background: #534AB7; border: none;
+  color: #fff; font-size: 14px; cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.bd-process-btn:disabled {
+  opacity: 0.4; cursor: default;
+}
+
+.bd-error {
+  font-size: 13px; color: #e24b4a;
+  text-align: center; padding: 4px 0;
+}
+
+/* Task recommendation cards */
+.bd-tasks-label {
+  font-size: 12px; color: #aaa; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.bd-task-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.bd-task-card {
+  display: flex; align-items: center; gap: 10px;
+  border: 0.5px solid #e5e4df; border-radius: 12px;
+  padding: 12px 12px;
+}
+
+.bd-task-body { flex: 1; min-width: 0; }
+
+.bd-task-text {
+  font-size: 14px; color: #1a1a1a; line-height: 1.4;
+}
+
+.bd-task-meta {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px;
+}
+
+.bd-pill {
+  font-size: 10px; font-weight: 500;
+  padding: 2px 8px; border-radius: 10px;
+}
+
+.bd-meta-tag {
+  font-size: 11px; color: #aaa;
+  background: #f5f4f0; padding: 2px 7px;
+  border-radius: 8px;
+}
+
+.bd-task-btns {
+  display: flex; gap: 6px; flex-shrink: 0;
+}
+
+.bd-reject {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 0.5px solid #e5e4df; background: #fff;
+  font-size: 18px; color: #ccc; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+
+.bd-reject:hover { border-color: #e24b4a; color: #e24b4a; }
+
+.bd-accept {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 0.5px solid #1D9E75; background: #1D9E75;
+  font-size: 16px; color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.15s;
+}
+
+.bd-accept:hover { opacity: 0.85; }
+
+/* All done state */
+.bd-done {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  padding: 30px 0;
+}
+
+.bd-done-icon {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: #1D9E75; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+
+.bd-done-text {
+  font-size: 16px; color: #1a1a1a; font-weight: 500;
+}
