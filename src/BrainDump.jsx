@@ -31,9 +31,11 @@ export function BrainDump({ onAccept, onClose }) {
     recognitionRef.current = recognition
 
     recognition.onresult = (e) => {
-      const transcript = Array.from(e.results)
-        .map(r => r[0].transcript).join(' ')
-      setText(prev => (prev ? prev + ' ' + transcript : transcript).trim())
+    const newTranscript = Array.from(e.results)
+        .slice(e.resultIndex)
+        .map(r => r[0].transcript)
+        .join(' ')
+    setText(prev => (prev ? prev + ' ' + newTranscript : newTranscript).trim())
     }
 
     recognition.onerror = () => setListening(false)

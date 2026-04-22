@@ -33,12 +33,26 @@ Respond ONLY with a valid JSON array, no explanation, no markdown, no backticks.
     )
 
     const data = await response.json()
+
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.error('Unexpected Gemini response:', JSON.stringify(data))
+      return res.status(500).json({ error: 'No response from AI' })
+    }
+
     const raw = data.candidates[0].content.parts[0].text.trim()
-    const clean = raw.replace(/```json|```/g, '').trim()
-    const tasks = JSON.parse(clean)
+    const clean = raw
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim()
+
+    const firstBracket = clean.indexOf('[')
+    const lastBracket = clean.lastIndexOf(']')
+    const jsonStr = clean.slice(firstBracket, lastBracket + 1)
+
+    const tasks = JSON.parse(jsonStr)
     res.status(200).json({ tasks })
   } catch (err) {
-    console.error(err)
+    console.error('braindump error:', err)
     res.status(500).json({ error: 'Failed to process brain dump' })
   }
 }
