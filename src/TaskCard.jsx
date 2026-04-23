@@ -64,9 +64,9 @@ export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPre
         value={task.priority}
         onChange={e => onChangePriority(task.id, e.target.value)}
       >
-        <option>Now</option>
-        <option>Soon</option>
-        <option>Someday</option>
+        <option>High! Now!</option>
+        <option>Medium... Soon</option>
+        <option>Low. Someday.</option>
       </select>
       <button className="delete-btn" onClick={() => onDelete(task.id)}>×</button>
     </div>
