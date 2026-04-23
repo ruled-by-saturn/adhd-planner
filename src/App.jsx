@@ -16,7 +16,7 @@ import {
 import { TaskCard } from './TaskCard'
 import './app.css'
 
-const PRIORITIES = ['Now', 'Soon', 'Someday']
+const PRIORITIES = ['High', 'Medium', 'Low']
 
 function getDateKey(offset = 0) {
   const d = new Date()
@@ -44,7 +44,7 @@ export default function App() {
   const [tasksByDay, setTasksByDay] = useState({})
   const [sortMode, setSortMode] = useState('priority')
   const [input, setInput] = useState('')
-  const [newPriority, setNewPriority] = useState('Now')
+  const [newPriority, setNewPriority] = useState('Medium')
   const [newTime, setNewTime] = useState('')
   const [showMonth, setShowMonth] = useState(false)
   const [reschedulingId, setReschedulingId] = useState(null)

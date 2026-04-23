@@ -3,9 +3,9 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
 const PILL = {
-  Now:     { bg: '#FAECE7', color: '#993C1D' },
-  Soon:    { bg: '#FAEEDA', color: '#854F0B' },
-  Someday: { bg: '#EEEDFE', color: '#534AB7' },
+  High:     { bg: '#FAECE7', color: '#993C1D' },
+  Medium:    { bg: '#FAEEDA', color: '#854F0B' },
+  Low:        { bg: '#EEEDFE', color: '#534AB7' },
 }
 
 export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPress }) {
@@ -64,9 +64,9 @@ export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPre
         value={task.priority}
         onChange={e => onChangePriority(task.id, e.target.value)}
       >
-        <option>High! Now!</option>
-        <option>Medium... Soon</option>
-        <option>Low. Someday.</option>
+        <option>High</option>
+        <option>Medium</option>
+        <option>Low</option>
       </select>
       <button className="delete-btn" onClick={() => onDelete(task.id)}>×</button>
     </div>
