@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react'
 
 const PILL = {
-  Now:     { bg: '#FAECE7', color: '#993C1D' },
-  Soon:    { bg: '#FAEEDA', color: '#854F0B' },
-  Someday: { bg: '#EEEDFE', color: '#534AB7' },
+  High:     { bg: '#FAECE7', color: '#993C1D' },
+  Medium:    { bg: '#FAEEDA', color: '#854F0B' },
+  Low: { bg: '#EEEDFE', color: '#534AB7' },
 }
 
 export function BrainDump({ onAccept, onClose }) {
@@ -141,7 +141,7 @@ export function BrainDump({ onAccept, onClose }) {
             </div>
             <div className="bd-task-list">
               {tasks.map(task => {
-                const pill = PILL[task.priority] || PILL.Someday
+                const pill = PILL[task.priority] || PILL.Low
                 return (
                   <div key={task.id} className="bd-task-card">
                     <div className="bd-task-body">

@@ -9,7 +9,7 @@ The user did a brain dump. Parse it into a list of actionable tasks.
 
 For each task return:
 - text: short clear task description
-- priority: "Now", "Soon", or "Someday" based on urgency
+- priority: "High", "Medium", or "Low" based on urgency
 - date: YYYY-MM-DD if a specific day is mentioned, otherwise null
 - time: HH:MM (24h) if a specific time is mentioned, otherwise null
 
@@ -17,7 +17,7 @@ Brain dump:
 "${text}"
 
 Respond ONLY with a valid JSON array, no explanation, no markdown, no backticks. Example:
-[{"text":"Call dentist","priority":"Now","date":null,"time":null}]`
+[{"text":"Call dentist","priority":"High","date":null,"time":null}]`
 
   try {
     const response = await fetch(

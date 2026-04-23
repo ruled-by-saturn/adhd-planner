@@ -282,12 +282,12 @@ async function loadTasks(userId) {
       </div>
 
       <button className="fab" onClick={() => setShowBrainDump(true)}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 21h6"/>
-          <path d="M12 3a6 6 0 0 1 6 6c0 2.5-1.5 4.5-3 6H9c-1.5-1.5-3-3.5-3-6a6 6 0 0 1 6-6z"/>
-          <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
-        </svg>
-      </button>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  </button>
 
 {showBrainDump && (
   <BrainDump
