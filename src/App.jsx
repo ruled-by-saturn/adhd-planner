@@ -3,6 +3,7 @@ import { RescheduleSheet } from './RescheduleSheet'
 import { MonthView } from './MonthView'
 import { Auth } from './Auth'
 import { BrainDump } from './BrainDump'
+import { Journal } from './Journal'
 import { supabase } from './supabase'
 
 import {
@@ -52,7 +53,8 @@ export default function App() {
   const [user, setUser] = useState(null)
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
-  const [showBrainDump, setShowBrainDump] = useState(false)
+  const [activeTab, setActiveTab] = useState('tasks')
+// remove: const [showBrainDump, setShowBrainDump] = useState(false)
 
   useEffect(() => {
   supabase.auth.getSession().then(({ data: { session } }) => {
@@ -202,99 +204,121 @@ async function loadTasks(userId) {
     return acc
   }, {})
 
-  if (loading) return <div className="loading">Loading...</div>
-  if (!user) return <Auth />
-
     if (loading) return <div className="loading">Loading...</div>
   if (!user) return <Auth />
 
   return (
-    <div className="app" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <div className="topbar">
-      <div className="day-nav">
-        <button className="nav-btn" onClick={() => setDayOffset(o => o - 1)}>‹</button>
-        <div className="day-info">
-          <div className="day-label">{formatDay(dayOffset)}</div>
-          <div className="date-sub">{formatDate(dayOffset)}</div>
-        </div>
-        <button className="nav-btn" onClick={() => setDayOffset(o => o + 1)}>›</button>
-        <button className="signout-btn" onClick={() => supabase.auth.signOut()} title="Sign out">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
-      </div>
-      <div className="sort-toggle">
-        <button className={sortMode === 'priority' ? 'sort-btn active' : 'sort-btn'}
-          onClick={() => setSortMode('priority')}>Priority</button>
-        <button className={sortMode === 'chrono' ? 'sort-btn active' : 'sort-btn'}
-          onClick={() => setSortMode('chrono')}>Chronological</button>
-        <button className="month-btn" onClick={() => setShowMonth(true)}>📅</button>
-      </div>
-    </div>
+    <div className="app">
 
-      <div className="task-list">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={sortedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-            {sortMode === 'priority'
-              ? PRIORITIES.map(p => grouped[p].length > 0 && (
-                  <div key={p}>
-                    <div className="section-label">{p}</div>
-                    {grouped[p].map(t => (
+      {activeTab === 'tasks' && (
+        <>
+          <div className="topbar">
+            <button className="signout-btn" onClick={() => supabase.auth.signOut()} title="Sign out">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </button>
+            <div className="day-nav">
+              <button className="nav-btn" onClick={() => setDayOffset(o => o - 1)}>‹</button>
+              <div className="day-info">
+                <div className="day-label">{formatDay(dayOffset)}</div>
+                <div className="date-sub">{formatDate(dayOffset)}</div>
+              </div>
+              <button className="nav-btn" onClick={() => setDayOffset(o => o + 1)}>›</button>
+            </div>
+            <div className="sort-toggle">
+              <button className={sortMode === 'priority' ? 'sort-btn active' : 'sort-btn'}
+                onClick={() => setSortMode('priority')}>Priority</button>
+              <button className={sortMode === 'chrono' ? 'sort-btn active' : 'sort-btn'}
+                onClick={() => setSortMode('chrono')}>Chronological</button>
+              <button className="month-btn" onClick={() => setShowMonth(true)}>📅</button>
+            </div>
+          </div>
+
+          <div className="task-list" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={sortedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                {sortMode === 'priority'
+                  ? PRIORITIES.map(p => grouped[p].length > 0 && (
+                      <div key={p}>
+                        <div className="section-label">{p}</div>
+                        {grouped[p].map(t => (
+                          <TaskCard key={t.id} task={t}
+                            onToggle={toggleDone} onDelete={deleteTask}
+                            onChangePriority={changePriority}
+                            onLongPress={setReschedulingId} />
+                        ))}
+                      </div>
+                    ))
+                  : sortedTasks.map(t => (
                       <TaskCard key={t.id} task={t}
                         onToggle={toggleDone} onDelete={deleteTask}
                         onChangePriority={changePriority}
                         onLongPress={setReschedulingId} />
-                    ))}
-                  </div>
-                ))
-              : sortedTasks.map(t => (
-                  <TaskCard key={t.id} task={t}
-                    onToggle={toggleDone} onDelete={deleteTask}
-                    onChangePriority={changePriority}
-                    onLongPress={setReschedulingId} />
-                ))
-            }
-          </SortableContext>
-        </DndContext>
-        {tasks.length === 0 && (
-          <div className="empty">No tasks yet — add one below</div>
-        )}
-      </div>
+                    ))
+                }
+              </SortableContext>
+            </DndContext>
+            {tasks.length === 0 && <div className="empty">No tasks yet — add one below</div>}
+          </div>
 
-      <div className="input-area">
-        <div className="input-row">
-          <input ref={inputRef} value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addTask()}
-            placeholder="Add a task..." />
-          <button className="add-btn" onClick={addTask}>+</button>
-        </div>
-        <div className="input-meta">
-          <select value={newPriority} onChange={e => setNewPriority(e.target.value)}>
-            {PRIORITIES.map(p => <option key={p}>{p}</option>)}
-          </select>
-          <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
-            className="time-input" />
-        </div>
-      </div>
+          <div className="input-area">
+            <div className="input-row">
+              <input ref={inputRef} value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addTask()}
+                placeholder="Add a task..." />
+              <button className="add-btn" onClick={addTask}>+</button>
+            </div>
+            <div className="input-meta">
+              <select value={newPriority} onChange={e => setNewPriority(e.target.value)}>
+                {PRIORITIES.map(p => <option key={p}>{p}</option>)}
+              </select>
+              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+                className="time-input" />
+            </div>
+          </div>
+        </>
+      )}
 
-      <button className="fab" onClick={() => setShowBrainDump(true)}>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-  </button>
+      {activeTab === 'braindump' && (
+        <BrainDump onAccept={acceptBrainDumpTask} />
+      )}
 
-{showBrainDump && (
-  <BrainDump
-    onAccept={acceptBrainDumpTask}
-    onClose={() => setShowBrainDump(false)}
-  />
-)}
+      {activeTab === 'journal' && (
+        <Journal user={user} />
+      )}
+
+      <nav className="tab-bar">
+        <button className={`tab-btn${activeTab === 'braindump' ? ' active' : ''}`} onClick={() => setActiveTab('braindump')}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21h6"/>
+            <path d="M12 3a6 6 0 0 1 6 6c0 2.5-1.5 4.5-3 6H9c-1.5-1.5-3-3.5-3-6a6 6 0 0 1 6-6z"/>
+            <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
+          </svg>
+          <span>Dump</span>
+        </button>
+        <button className={`tab-btn${activeTab === 'tasks' ? ' active' : ''}`} onClick={() => setActiveTab('tasks')}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <polyline points="3 6 4 7 6 5"/>
+            <polyline points="3 12 4 13 6 11"/>
+            <polyline points="3 18 4 19 6 17"/>
+          </svg>
+          <span>Tasks</span>
+        </button>
+        <button className={`tab-btn${activeTab === 'journal' ? ' active' : ''}`} onClick={() => setActiveTab('journal')}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          <span>Journal</span>
+        </button>
+      </nav>
 
       {reschedulingId && (
         <RescheduleSheet
@@ -322,4 +346,3 @@ async function loadTasks(userId) {
       )}
     </div>
   )
-}
