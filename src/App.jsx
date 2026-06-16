@@ -40,6 +40,14 @@ function formatDate(offset) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
+function getNextDate(dateKey, recurrence) {
+  const d = new Date(dateKey + 'T00:00:00')
+  if (recurrence === 'daily') d.setDate(d.getDate() + 1)
+  if (recurrence === 'weekly') d.setDate(d.getDate() + 7)
+  if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1)
+  return d.toISOString().split('T')[0]
+}
+
 export default function App() {
   const [dayOffset, setDayOffset] = useState(0)
   const [tasksByDay, setTasksByDay] = useState({})
@@ -54,6 +62,7 @@ export default function App() {
   const inputRef = useRef(null)
   const touchStartX = useRef(null)
   const [activeTab, setActiveTab] = useState('tasks')
+  const [newRecurrence, setNewRecurrence] = useState('')
 // remove: const [showBrainDump, setShowBrainDump] = useState(false)
 
   useEffect(() => {
@@ -94,30 +103,53 @@ async function loadTasks(userId) {
     setTasksByDay(prev => ({ ...prev, [dateKey]: updated }))
   }
 
-  async function addTask() {
-    if (!input.trim()) return
-    const task = {
-      id: Date.now().toString(),
-      date_key: dateKey,
-      text: input.trim(),
-      priority: newPriority,
-      done: false,
-      time: newTime,
-      position: tasks.length,
-      user_id: user.id,
-    }
-    setTasks([...tasks, task])
-    setInput('')
-    setNewTime('')
-    await supabase.from('tasks').insert(task)
+ async function addTask() {
+  if (!input.trim()) return
+  const task = {
+    id: Date.now().toString(),
+    date_key: dateKey,
+    text: input.trim(),
+    priority: newPriority,
+    done: false,
+    time: newTime,
+    position: tasks.length,
+    user_id: user.id,
+    recurrence: newRecurrence || null,
   }
+  setTasks([...tasks, task])
+  setInput('')
+  setNewTime('')
+  setNewRecurrence('')
+  await supabase.from('tasks').insert(task)
+}
 
   async function toggleDone(id) {
-    const task = tasks.find(t => t.id === id)
-    if (!task) return
-    setTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t))
-    await supabase.from('tasks').update({ done: !task.done }).eq('id', id)
+  const task = tasks.find(t => t.id === id)
+  if (!task) return
+  const newDone = !task.done
+  setTasks(tasks.map(t => t.id === id ? { ...t, done: newDone } : t))
+  await supabase.from('tasks').update({ done: newDone }).eq('id', id)
+
+  if (newDone && task.recurrence) {
+    const nextDate = getNextDate(task.date_key, task.recurrence)
+    const nextTask = {
+      id: (Date.now() + 1).toString(),
+      date_key: nextDate,
+      text: task.text,
+      priority: task.priority,
+      done: false,
+      time: task.time,
+      position: (tasksByDay[nextDate] || []).length,
+      user_id: user.id,
+      recurrence: task.recurrence,
+    }
+    setTasksByDay(prev => ({
+      ...prev,
+      [nextDate]: [...(prev[nextDate] || []), nextTask],
+    }))
+    await supabase.from('tasks').insert(nextTask)
   }
+}
 
   async function deleteTask(id) {
     setTasks(tasks.filter(t => t.id !== id))
@@ -272,12 +304,19 @@ async function loadTasks(userId) {
                 placeholder="Add a task..." />
               <button className="add-btn" onClick={addTask}>+</button>
             </div>
-            <div className="input-meta">
+           <div className="input-meta">
               <select value={newPriority} onChange={e => setNewPriority(e.target.value)}>
                 {PRIORITIES.map(p => <option key={p}>{p}</option>)}
               </select>
               <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
                 className="time-input" />
+              <select value={newRecurrence} onChange={e => setNewRecurrence(e.target.value)}
+                className="recurrence-select">
+                <option value="">Once</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
             </div>
           </div>
         </>

@@ -3,7 +3,7 @@ import { supabase } from './supabase'
 
 const MOODS = ['😢', '😔', '😐', '😊', '😄']
 
-const PROMPTS = `How's your physical and mental health today?
+const PLACEHOLDER = `How's your physical and mental health today?
 
 How are you feeling?
 
@@ -14,9 +14,123 @@ function formatTitle(dateKey) {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
-function formatShort(dateKey) {
-  const d = new Date(dateKey + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+function stripHtml(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function HalfStars({ rating }) {
+  return (
+    <span style={{ display: 'inline-flex' }}>
+      {[1, 2, 3, 4, 5].map(n => {
+        const full = rating >= n
+        const half = !full && rating >= n - 0.5
+        return (
+          <span key={n} style={{ position: 'relative', display: 'inline-block', fontSize: '13px' }}>
+            <span style={{ color: '#ddd' }}>★</span>
+            {(full || half) && (
+              <span style={{
+                color: '#534AB7', position: 'absolute', left: 0, top: 0,
+                clipPath: half ? 'inset(0 50% 0 0)' : 'none'
+              }}>★</span>
+            )}
+          </span>
+        )
+      })}
+    </span>
+  )
+}
+
+function StarRating({ rating, onChange }) {
+  function handleClick(e, starIndex) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX
+    const x = clientX - rect.left
+    const isLeft = x < rect.width / 2
+    const newRating = isLeft ? starIndex - 0.5 : starIndex
+    onChange(rating === newRating ? null : newRating)
+  }
+
+  return (
+    <div className="rating-row">
+      {[1, 2, 3, 4, 5].map(n => {
+        const full = rating >= n
+        const half = !full && rating >= n - 0.5
+        return (
+          <button key={n} className="star-btn-wrap" onClick={e => handleClick(e, n)}>
+            <span className="star-empty">★</span>
+            {(full || half) && (
+              <span className="star-filled" style={{ clipPath: half ? 'inset(0 50% 0 0)' : 'none' }}>★</span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function ToolBtn({ onPress, title, children }) {
+  return (
+    <button
+      className="rich-tool-btn"
+      title={title}
+      onMouseDown={e => { e.preventDefault(); onPress() }}
+      onTouchEnd={e => { e.preventDefault(); onPress() }}
+    >
+      {children}
+    </button>
+  )
+}
+
+function RichEditor({ initialContent, onChange }) {
+  const editorRef = useRef(null)
+  const initialized = useRef(false)
+
+  useEffect(() => {
+    if (editorRef.current && !initialized.current) {
+      editorRef.current.innerHTML = initialContent || ''
+      initialized.current = true
+    }
+  }, [])
+
+  function exec(cmd, value = null) {
+    editorRef.current?.focus()
+    document.execCommand(cmd, false, value)
+  }
+
+  function insertLink() {
+    const url = window.prompt('Enter URL (include https://):')
+    if (url) exec('createLink', url)
+  }
+
+  function handleInput() {
+    onChange(editorRef.current?.innerHTML || '')
+  }
+
+  return (
+    <div className="rich-editor-wrap">
+      <div className="rich-toolbar">
+        <ToolBtn onPress={() => exec('bold')} title="Bold"><b>B</b></ToolBtn>
+        <ToolBtn onPress={() => exec('italic')} title="Italic"><i>I</i></ToolBtn>
+        <ToolBtn onPress={() => exec('underline')} title="Underline"><u>U</u></ToolBtn>
+        <ToolBtn onPress={() => exec('formatBlock', 'blockquote')} title="Quote">❝</ToolBtn>
+        <ToolBtn onPress={insertLink} title="Link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </ToolBtn>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        className="rich-editor"
+        data-placeholder={PLACEHOLDER}
+        onInput={handleInput}
+      />
+    </div>
+  )
 }
 
 function MoodChart({ entries, range, onRangeChange }) {
@@ -67,16 +181,16 @@ function MoodChart({ entries, range, onRangeChange }) {
         <div className="mood-chart-empty">Keep journaling to see your trend</div>
       ) : (
         <>
-          <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{display:'block'}}>
-            {[1,2,3,4,5].map(v => {
-              const y = PAD + cH - ((v-1)/4)*cH
-              return <line key={v} x1={PAD} y1={y} x2={W-PAD} y2={y} stroke="#f0efe9" strokeWidth="1"/>
+          <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block' }}>
+            {[1, 2, 3, 4, 5].map(v => {
+              const y = PAD + cH - ((v - 1) / 4) * cH
+              return <line key={v} x1={PAD} y1={y} x2={W - PAD} y2={y} stroke="#f0efe9" strokeWidth="1" />
             })}
-            {linePath && <path d={linePath} fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>}
-            {dots.map(d => <circle key={d.key} cx={d.x} cy={d.y} r="3" fill="#534AB7"/>)}
+            {linePath && <path d={linePath} fill="none" stroke="#534AB7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
+            {dots.map(d => <circle key={d.key} cx={d.x} cy={d.y} r="3" fill="#534AB7" />)}
           </svg>
           <div className="mood-y-axis">
-            {MOODS.map((e,i) => <span key={i}>{e}</span>)}
+            {MOODS.map((e, i) => <span key={i}>{e}</span>)}
           </div>
         </>
       )}
@@ -85,16 +199,32 @@ function MoodChart({ entries, range, onRangeChange }) {
 }
 
 function JournalEditor({ entry, onBack, onUpdate }) {
-  const [content, setContent] = useState(entry.content || '')
   const [mood, setMood] = useState(entry.mood ?? null)
   const [rating, setRating] = useState(entry.rating ?? null)
-  const timer = useRef(null)
+  const timerRef = useRef(null)
+  const latestContent = useRef(entry.content || '')
 
-  function save(c, m, r) {
-    clearTimeout(timer.current)
-    timer.current = setTimeout(() => {
-      onUpdate({ ...entry, content: c, mood: m, rating: r })
+  function save(content, m, r) {
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      onUpdate({ ...entry, content, mood: m, rating: r })
     }, 800)
+  }
+
+  function handleMood(m) {
+    const next = mood === m ? null : m
+    setMood(next)
+    save(latestContent.current, next, rating)
+  }
+
+  function handleRating(r) {
+    setRating(r)
+    save(latestContent.current, mood, r)
+  }
+
+  function handleContent(html) {
+    latestContent.current = html
+    save(html, mood, rating)
   }
 
   return (
@@ -109,32 +239,19 @@ function JournalEditor({ entry, onBack, onUpdate }) {
             {MOODS.map((emoji, i) => (
               <button
                 key={i}
-                className={`mood-btn${mood === i+1 ? ' active' : ''}`}
-                onClick={() => { setMood(i+1); save(content, i+1, rating) }}
+                className={`mood-btn${mood === i + 1 ? ' active' : ''}`}
+                onClick={() => handleMood(i + 1)}
               >{emoji}</button>
             ))}
           </div>
         </div>
         <div className="tracker-group">
           <div className="tracker-label">Day rating</div>
-          <div className="rating-row">
-            {[1,2,3,4,5].map(n => (
-              <button
-                key={n}
-                className={`star-btn${rating >= n ? ' active' : ''}`}
-                onClick={() => { setRating(n); save(content, mood, n) }}
-              >★</button>
-            ))}
-          </div>
+          <StarRating rating={rating} onChange={handleRating} />
         </div>
       </div>
 
-      <textarea
-        className="journal-textarea"
-        placeholder={PROMPTS}
-        value={content}
-        onChange={e => { setContent(e.target.value); save(e.target.value, mood, rating) }}
-      />
+      <RichEditor initialContent={entry.content} onChange={handleContent} />
     </div>
   )
 }
@@ -184,19 +301,40 @@ export function Journal({ user }) {
 
   const selected = entries.find(e => e.id === selectedId)
   if (selected) return (
-    <JournalEditor
-      entry={selected}
-      onBack={() => setSelectedId(null)}
-      onUpdate={updateEntry}
-    />
+    <JournalEditor entry={selected} onBack={() => setSelectedId(null)} onUpdate={updateEntry} />
   )
 
   return (
     <div className="journal-list">
       <div className="journal-list-header">
-        <div className="journal-list-title">Journal</div>
+       <div className="journal-list-title">Journal</div>
+        <div className="journal-header-actions">
+        <input
+          type="date"
+          className="journal-date-picker"
+          max={new Date().toISOString().split('T')[0]}
+          onChange={async e => {
+            const dateKey = e.target.value
+            if (!dateKey) return
+            e.target.value = ''
+            const existing = entries.find(en => en.date_key === dateKey)
+            if (existing) { setSelectedId(existing.id); return }
+            const entry = {
+              id: Date.now().toString(),
+              user_id: user.id,
+              date_key: dateKey,
+              content: '',
+              mood: null,
+              rating: null,
+            }
+            setEntries(prev => [entry, ...prev].sort((a, b) => b.date_key.localeCompare(a.date_key)))
+            setSelectedId(entry.id)
+            await supabase.from('journal_entries').insert(entry)
+          }}
+        />
         <button className="journal-new-btn" onClick={newEntry}>+ Today</button>
       </div>
+    </div>
 
       <MoodChart entries={entries} range={chartRange} onRangeChange={setChartRange} />
 
@@ -204,23 +342,25 @@ export function Journal({ user }) {
         {entries.length === 0 && (
           <div className="empty">No entries yet — tap + Today to start</div>
         )}
-        {entries.map(entry => (
-          <div key={entry.id} className="journal-card" onClick={() => setSelectedId(entry.id)}>
-            <div className="journal-card-top">
-              <div className="journal-card-date">{formatTitle(entry.date_key)}</div>
-              {entry.mood && <span className="journal-card-emoji">{MOODS[entry.mood - 1]}</span>}
-            </div>
-            {entry.rating && (
-              <div className="journal-card-stars">
-                <span style={{color:'#534AB7'}}>{'★'.repeat(entry.rating)}</span>
-                <span style={{color:'#ddd'}}>{'★'.repeat(5 - entry.rating)}</span>
+        {entries.map(entry => {
+          const preview = stripHtml(entry.content)
+          return (
+            <div key={entry.id} className="journal-card" onClick={() => setSelectedId(entry.id)}>
+              <div className="journal-card-top">
+                <div className="journal-card-date">{formatTitle(entry.date_key)}</div>
+                {entry.mood && <span className="journal-card-emoji">{MOODS[entry.mood - 1]}</span>}
               </div>
-            )}
-            <div className={`journal-card-preview${!entry.content ? ' muted' : ''}`}>
-              {entry.content ? entry.content.slice(0, 120) + (entry.content.length > 120 ? '...' : '') : 'Tap to write...'}
+              {entry.rating && (
+                <div className="journal-card-stars">
+                  <HalfStars rating={entry.rating} />
+                </div>
+              )}
+              <div className={`journal-card-preview${!preview ? ' muted' : ''}`}>
+                {preview ? preview.slice(0, 120) + (preview.length > 120 ? '...' : '') : 'Tap to write...'}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

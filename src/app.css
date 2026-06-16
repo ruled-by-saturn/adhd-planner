@@ -820,3 +820,81 @@ body {
 .journal-textarea::placeholder {
   color: #ccc; white-space: pre-line;
 }
+
+/* Recurrence select */
+.recurrence-select {
+  flex: 0.9; border: 0.5px solid #d3d1c7;
+  border-radius: 8px; padding: 6px 10px;
+  font-size: 13px; background: #f9f8f5; color: #1a1a1a;
+  -webkit-appearance: none; appearance: none; outline: none;
+}
+
+.recurrence-badge {
+  font-size: 10px; color: #534AB7;
+  background: #EEEDFE; border-radius: 6px;
+  padding: 1px 6px; display: inline-block;
+  margin-top: 3px;
+}
+
+/* Rich text editor */
+.rich-editor-wrap {
+  border: 0.5px solid #e5e4df;
+  border-radius: 12px; overflow: hidden;
+  flex: 1; display: flex; flex-direction: column;
+}
+
+.rich-toolbar {
+  display: flex; gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 0.5px solid #e5e4df;
+  background: #f9f8f5; flex-shrink: 0;
+}
+
+.rich-tool-btn {
+  width: 32px; height: 32px; border-radius: 6px;
+  border: 0.5px solid transparent; background: transparent;
+  cursor: pointer; font-size: 14px; color: #555;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.1s;
+}
+
+.rich-tool-btn:hover, .rich-tool-btn:active {
+  background: #eee; border-color: #ddd;
+}
+
+.rich-editor {
+  min-height: 240px; flex: 1;
+  padding: 14px; font-size: 15px; line-height: 1.7;
+  color: #1a1a1a; background: #fafaf8; outline: none;
+  font-family: inherit;
+}
+
+.rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #ccc; pointer-events: none;
+  white-space: pre-line; display: block;
+}
+
+.rich-editor blockquote {
+  border-left: 3px solid #534AB7;
+  margin: 6px 0; padding: 4px 12px;
+  color: #666; font-style: italic;
+}
+
+.rich-editor a { color: #534AB7; text-decoration: underline; }
+
+/* Half star rating */
+.star-btn-wrap {
+  position: relative; background: transparent;
+  border: none; cursor: pointer; padding: 2px;
+  font-size: 24px; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.star-empty { color: #ddd; }
+
+.star-filled {
+  color: #534AB7;
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+}

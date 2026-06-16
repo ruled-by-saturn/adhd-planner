@@ -57,6 +57,9 @@ export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPre
       >
         <span className="task-text">{task.text}</span>
         {task.time && <span className="task-time">{task.time}</span>}
+        {task.recurrence && (
+          <span className="recurrence-badge">↻ {task.recurrence}</span>
+        )}
       </div>
       <select
         className="priority-select"
