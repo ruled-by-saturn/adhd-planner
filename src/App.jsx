@@ -19,33 +19,99 @@ import './app.css'
 
 const PRIORITIES = ['High', 'Medium', 'Low']
 
-function getDateKey(offset = 0) {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
+// How many days ahead recurring tasks are materialized.
+const HORIZON_DAYS = 60
+
+// All dates are anchored to GMT+7 (WIB), independent of the device timezone,
+// so "today" / date keys don't drift around midnight.
+const TZ_OFFSET_MS = 7 * 60 * 60 * 1000
+
+// Format a Date's UTC fields as a YYYY-MM-DD key.
+function keyFromUTC(d) {
   return d.toISOString().split('T')[0]
+}
+
+// Current GMT+7 calendar date, shifted by `offset` days.
+function getDateKey(offset = 0) {
+  const d = new Date(Date.now() + TZ_OFFSET_MS)
+  d.setUTCDate(d.getUTCDate() + offset)
+  return keyFromUTC(d)
+}
+
+// A Date object whose UTC fields hold the GMT+7 wall-clock date for a key —
+// used only for formatting (render with timeZone: 'UTC').
+function dateFromKey(dateKey) {
+  return new Date(dateKey + 'T00:00:00Z')
+}
+
+// A recurring series shares one root id. Occurrence rows use `${root}__${date}`,
+// the first/master row uses the plain root id — so all members map to one root.
+function seriesRoot(task) {
+  return task.id.includes('__') ? task.id.split('__')[0] : task.id
+}
+
+// Materialize any missing occurrences of every recurring series up to uptoKey.
+// Forward-fills from each series' latest existing instance, so deleting a single
+// past/middle occurrence never resurrects it.
+function generateOccurrences(byDay, uptoKey) {
+  const groups = {}
+  Object.values(byDay).flat().forEach(t => {
+    if (!t.recurrence) return
+    const root = seriesRoot(t)
+    if (!groups[root]) groups[root] = []
+    groups[root].push(t)
+  })
+
+  const next = { ...byDay }
+  const inserts = []
+  for (const root in groups) {
+    const latest = groups[root].reduce((a, b) => (b.date_key > a.date_key ? b : a))
+    let cursor = latest.date_key
+    while (true) {
+      const nd = getNextDate(cursor, latest.recurrence)
+      if (nd > uptoKey) break
+      const dayArr = next[nd] ? [...next[nd]] : []
+      if (!dayArr.some(t => seriesRoot(t) === root)) {
+        const occ = {
+          id: `${root}__${nd}`,
+          date_key: nd,
+          text: latest.text,
+          priority: latest.priority,
+          done: false,
+          time: latest.time,
+          position: dayArr.length,
+          user_id: latest.user_id,
+          recurrence: latest.recurrence,
+        }
+        dayArr.push(occ)
+        inserts.push(occ)
+        next[nd] = dayArr
+      }
+      cursor = nd
+    }
+  }
+  return { next, inserts }
 }
 
 function formatDay(offset) {
   if (offset === 0) return 'Today'
   if (offset === 1) return 'Tomorrow'
   if (offset === -1) return 'Yesterday'
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  return d.toLocaleDateString('en-US', { weekday: 'long' })
+  return dateFromKey(getDateKey(offset))
+    .toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' })
 }
 
 function formatDate(offset) {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  return dateFromKey(getDateKey(offset))
+    .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' })
 }
 
 function getNextDate(dateKey, recurrence) {
-  const d = new Date(dateKey + 'T00:00:00')
-  if (recurrence === 'daily') d.setDate(d.getDate() + 1)
-  if (recurrence === 'weekly') d.setDate(d.getDate() + 7)
-  if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1)
-  return d.toISOString().split('T')[0]
+  const d = dateFromKey(dateKey)
+  if (recurrence === 'daily') d.setUTCDate(d.getUTCDate() + 1)
+  if (recurrence === 'weekly') d.setUTCDate(d.getUTCDate() + 7)
+  if (recurrence === 'monthly') d.setUTCMonth(d.getUTCMonth() + 1)
+  return keyFromUTC(d)
 }
 
 export default function App() {
@@ -57,6 +123,7 @@ export default function App() {
   const [newTime, setNewTime] = useState('')
   const [showMonth, setShowMonth] = useState(false)
   const [reschedulingId, setReschedulingId] = useState(null)
+  const [deletingTask, setDeletingTask] = useState(null)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const inputRef = useRef(null)
@@ -92,9 +159,28 @@ async function loadTasks(userId) {
     if (!byDay[task.date_key]) byDay[task.date_key] = []
     byDay[task.date_key].push(task)
   })
-  setTasksByDay(byDay)
+
+  // Fill in recurring occurrences for the rolling horizon.
+  const { next, inserts } = generateOccurrences(byDay, getDateKey(HORIZON_DAYS))
+  setTasksByDay(next)
   setLoading(false)
+  if (inserts.length) {
+    await supabase.from('tasks').upsert(inserts, { onConflict: 'id', ignoreDuplicates: true })
+  }
 }
+
+// Extend the recurring horizon when navigating far into the future.
+useEffect(() => {
+  if (!user) return
+  const viewedKey = getDateKey(dayOffset)
+  const baseKey = getDateKey(HORIZON_DAYS)
+  const uptoKey = viewedKey > baseKey ? getDateKey(dayOffset + 14) : baseKey
+  const { next, inserts } = generateOccurrences(tasksByDay, uptoKey)
+  if (!inserts.length) return
+  setTasksByDay(next)
+  supabase.from('tasks').upsert(inserts, { onConflict: 'id', ignoreDuplicates: true })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [dayOffset, user])
 
   const dateKey = getDateKey(dayOffset)
   const tasks = tasksByDay[dateKey] || []
@@ -116,11 +202,23 @@ async function loadTasks(userId) {
     user_id: user.id,
     recurrence: newRecurrence || null,
   }
-  setTasks([...tasks, task])
   setInput('')
   setNewTime('')
   setNewRecurrence('')
   await supabase.from('tasks').insert(task)
+
+  if (task.recurrence) {
+    // Materialize the rest of the series across the horizon right away, so it
+    // shows on every future day — not only after today's is completed.
+    const seeded = { ...tasksByDay, [dateKey]: [...tasks, task] }
+    const { next, inserts } = generateOccurrences(seeded, getDateKey(HORIZON_DAYS))
+    setTasksByDay(next)
+    if (inserts.length) {
+      await supabase.from('tasks').upsert(inserts, { onConflict: 'id', ignoreDuplicates: true })
+    }
+  } else {
+    setTasks([...tasks, task])
+  }
 }
 
   async function toggleDone(id) {
@@ -129,31 +227,40 @@ async function loadTasks(userId) {
   const newDone = !task.done
   setTasks(tasks.map(t => t.id === id ? { ...t, done: newDone } : t))
   await supabase.from('tasks').update({ done: newDone }).eq('id', id)
-
-  if (newDone && task.recurrence) {
-    const nextDate = getNextDate(task.date_key, task.recurrence)
-    const nextTask = {
-      id: (Date.now() + 1).toString(),
-      date_key: nextDate,
-      text: task.text,
-      priority: task.priority,
-      done: false,
-      time: task.time,
-      position: (tasksByDay[nextDate] || []).length,
-      user_id: user.id,
-      recurrence: task.recurrence,
-    }
-    setTasksByDay(prev => ({
-      ...prev,
-      [nextDate]: [...(prev[nextDate] || []), nextTask],
-    }))
-    await supabase.from('tasks').insert(nextTask)
-  }
+  // Future occurrences already exist for recurring series — no spawning here.
 }
 
-  async function deleteTask(id) {
+  function deleteTask(id) {
+    const task = tasks.find(t => t.id === id)
+    if (task?.recurrence) {
+      // Recurring: ask whether to remove just this one or the whole series.
+      setDeletingTask(task)
+      return
+    }
+    removeOccurrence(id)
+  }
+
+  async function removeOccurrence(id) {
     setTasks(tasks.filter(t => t.id !== id))
     await supabase.from('tasks').delete().eq('id', id)
+  }
+
+  async function deleteSeries(task) {
+    const root = seriesRoot(task)
+    // Collect every occurrence id of this series (exact match on root, so a
+    // numeric root can't be mistaken for a prefix of another series' root).
+    const ids = Object.values(tasksByDay).flat()
+      .filter(t => seriesRoot(t) === root)
+      .map(t => t.id)
+    setTasksByDay(prev => {
+      const next = {}
+      for (const day in prev) {
+        next[day] = prev[day].filter(t => seriesRoot(t) !== root)
+      }
+      return next
+    })
+    setDeletingTask(null)
+    if (ids.length) await supabase.from('tasks').delete().in('id', ids)
   }
 
   async function changePriority(id, priority) {
@@ -368,15 +475,43 @@ async function loadTasks(userId) {
         />
       )}
 
+      {deletingTask && (
+        <div className="sheet-backdrop" onClick={() => setDeletingTask(null)}>
+          <div className="sheet" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle" />
+            <div className="sheet-title">Delete recurring task</div>
+            <div className="sheet-task-name">{deletingTask.text}</div>
+            <div className="sheet-options">
+              <button className="sheet-option" onClick={() => {
+                removeOccurrence(deletingTask.id)
+                setDeletingTask(null)
+              }}>
+                <span className="sheet-option-label">This occurrence</span>
+                <span className="sheet-option-sub">Only {dateFromKey(deletingTask.date_key).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' })}</span>
+              </button>
+              <button className="sheet-option sheet-option-danger" onClick={() => deleteSeries(deletingTask)}>
+                <span className="sheet-option-label">All occurrences</span>
+                <span className="sheet-option-sub">Delete the entire series</span>
+              </button>
+            </div>
+            <button className="sheet-cancel" onClick={() => setDeletingTask(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       {showMonth && (
         <MonthView
           tasksByDay={tasksByDay}
-          initialDate={(() => { const d = new Date(); d.setDate(d.getDate() + dayOffset); return d })()}
+          initialDate={(() => {
+            // GMT+7 "today + dayOffset" as a local Date for the calendar grid.
+            const s = new Date(Date.now() + TZ_OFFSET_MS)
+            return new Date(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate() + dayOffset)
+          })()}
           onClose={() => setShowMonth(false)}
           onSelectDay={(date) => {
-            const today = new Date()
-            today.setHours(0,0,0,0)
-            date.setHours(0,0,0,0)
+            const s = new Date(Date.now() + TZ_OFFSET_MS)
+            const today = new Date(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate())
+            date.setHours(0, 0, 0, 0)
             const diff = Math.round((date - today) / 86400000)
             setDayOffset(diff)
             setShowMonth(false)

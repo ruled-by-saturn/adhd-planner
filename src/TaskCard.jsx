@@ -61,6 +61,7 @@ export function TaskCard({ task, onToggle, onDelete, onChangePriority, onLongPre
           <span className="recurrence-badge">↻ {task.recurrence}</span>
         )}
       </div>
+      
       <select
         className="priority-select"
         style={{ background: pill.bg, color: pill.color }}

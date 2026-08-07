@@ -2,8 +2,19 @@ import { useState } from 'react'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// Key by the cell's own calendar date (its local Y/M/D), matching the GMT+7
+// keys App produces. toISOString() would shift to UTC and mislabel cells.
 function getDateKey(date) {
-  return date.toISOString().split('T')[0]
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// "Today" anchored to GMT+7, as a local Date so isSameDay compares correctly.
+function gmt7Today() {
+  const s = new Date(Date.now() + 7 * 60 * 60 * 1000)
+  return new Date(s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate())
 }
 
 function isSameDay(a, b) {
@@ -13,7 +24,7 @@ function isSameDay(a, b) {
 }
 
 export function MonthView({ tasksByDay, onSelectDay, onClose, initialDate }) {
-  const today = new Date()
+  const today = gmt7Today()
   const [viewDate, setViewDate] = useState(
     new Date(initialDate.getFullYear(), initialDate.getMonth(), 1)
   )

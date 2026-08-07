@@ -318,6 +318,12 @@ body {
 
 .sheet-option:active { background: #f0eff9; }
 
+.sheet-option-danger {
+  border-color: #f0d5cc; background: #fdf6f3;
+}
+.sheet-option-danger:active { background: #faece7; }
+.sheet-option-danger .sheet-option-label { color: #993C1D; }
+
 .sheet-option-label {
   font-size: 15px; color: #1a1a1a;
 }
@@ -897,4 +903,15 @@ body {
   color: #534AB7;
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
+}
+
+.journal-header-actions {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.journal-date-picker {
+  border: 0.5px solid #d3d1c7; border-radius: 10px;
+  padding: 6px 10px; font-size: 13px;
+  background: #f9f8f5; color: #1a1a1a;
+  outline: none; cursor: pointer;
 }

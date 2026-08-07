@@ -1,20 +1,22 @@
 import { useState } from 'react'
 
+const TZ_OFFSET_MS = 7 * 60 * 60 * 1000 // GMT+7, matching App's date keys.
+
 function offsetFromToday(days) {
-  const d = new Date()
-  d.setDate(d.getDate() + days)
+  const d = new Date(Date.now() + TZ_OFFSET_MS)
+  d.setUTCDate(d.getUTCDate() + days)
   return d.toISOString().split('T')[0]
 }
 
 function addDaysFromDate(dateKey, days) {
-  const d = new Date(dateKey + 'T00:00:00')
-  d.setDate(d.getDate() + days)
+  const d = new Date(dateKey + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + days)
   return d.toISOString().split('T')[0]
 }
 
 function formatShort(dateKey) {
-  const d = new Date(dateKey + 'T00:00:00')
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  const d = new Date(dateKey + 'T00:00:00Z')
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' })
 }
 
 export function RescheduleSheet({ taskText, currentDate, onReschedule, onClose }) {
