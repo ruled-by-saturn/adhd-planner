@@ -147,6 +147,17 @@ body {
 
 .delete-btn:hover { color: #e24b4a; }
 
+.edit-btn {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: transparent;
+  color: #ccc; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; padding: 0;
+  transition: color 0.15s;
+}
+
+.edit-btn:hover { color: #534AB7; }
+
 /* Input area */
 .input-area {
   padding: 10px 12px 24px;
@@ -372,6 +383,42 @@ body {
   border: 0.5px solid #e5e4df; background: #fff;
   font-size: 15px; color: #888; cursor: pointer;
 }
+
+/* Edit sheet */
+.edit-field {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-bottom: 14px;
+}
+
+.edit-label {
+  font-size: 12px; color: #aaa; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.edit-input {
+  border: 0.5px solid #d3d1c7; border-radius: 10px;
+  padding: 10px 12px; font-size: 14px;
+  background: #f9f8f5; color: #1a1a1a; outline: none;
+}
+
+.edit-time-row {
+  display: flex; gap: 8px; align-items: center;
+}
+
+.edit-time-row .edit-input { flex: 1; }
+
+.edit-clear {
+  padding: 8px 12px; border-radius: 10px;
+  border: 0.5px solid #e5e4df; background: #fff;
+  font-size: 13px; color: #888; cursor: pointer;
+}
+
+.edit-note {
+  font-size: 12px; color: #999; line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.edit-save { width: 100%; margin-bottom: 8px; }
 
 .loading {
   display: flex; align-items: center; justify-content: center;
