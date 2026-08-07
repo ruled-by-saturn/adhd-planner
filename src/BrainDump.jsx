@@ -51,7 +51,8 @@ export function BrainDump({ onAccept }) {
     setListening(false)
 
     try {
-      const today = new Date().toISOString().split('T')[0]
+      // GMT+7 (WIB) so relative dates like "besok"/"tomorrow" resolve correctly.
+      const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split('T')[0]
       const res = await fetch('/api/braindump', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,6 +140,7 @@ export function BrainDump({ onAccept }) {
                       <span className="bd-pill" style={{ background: pill.bg, color: pill.color }}>{task.priority}</span>
                       {task.date && <span className="bd-meta-tag">{new Date(task.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>}
                       {task.time && <span className="bd-meta-tag">{task.time}</span>}
+                      {task.recurrence && <span className="bd-meta-tag">↻ {task.recurrence}</span>}
                     </div>
                   </div>
                   <div className="bd-task-btns">

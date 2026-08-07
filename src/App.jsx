@@ -311,6 +311,7 @@ useEffect(() => {
   async function acceptBrainDumpTask(task) {
   const targetDate = task.date || getDateKey(0)
   const existing = tasksByDay[targetDate] || []
+  const recurrence = ['daily', 'weekly', 'monthly'].includes(task.recurrence) ? task.recurrence : null
   const newTask = {
     id: Date.now().toString(),
     date_key: targetDate,
@@ -320,12 +321,24 @@ useEffect(() => {
     time: task.time || '',
     position: existing.length,
     user_id: user.id,
+    recurrence,
   }
-  setTasksByDay(prev => ({
-    ...prev,
-    [targetDate]: [...(prev[targetDate] || []), newTask],
-  }))
   await supabase.from('tasks').insert(newTask)
+
+  if (recurrence) {
+    // Fan the recurring task out across the horizon, same as adding one manually.
+    const seeded = { ...tasksByDay, [targetDate]: [...existing, newTask] }
+    const { next, inserts } = generateOccurrences(seeded, getDateKey(HORIZON_DAYS))
+    setTasksByDay(next)
+    if (inserts.length) {
+      await supabase.from('tasks').upsert(inserts, { onConflict: 'id', ignoreDuplicates: true })
+    }
+  } else {
+    setTasksByDay(prev => ({
+      ...prev,
+      [targetDate]: [...(prev[targetDate] || []), newTask],
+    }))
+  }
   }
 
   const sensors = useSensors(

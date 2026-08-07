@@ -3,21 +3,29 @@ export default async function handler(req, res) {
 
   const { text, today } = req.body
 
-  const prompt = `Today is ${today}.
+  const prompt = `Today is ${today} (timezone GMT+7 / WIB).
 
-The user did a brain dump. Parse it into a list of actionable tasks.
+The user did a brain dump — a stream of thoughts that may be in English, Bahasa Indonesia, or a mix of both. Parse it into a list of actionable tasks.
 
-For each task return:
-- text: short clear task description
-- priority: "High", "Medium", or "Low" based on urgency
-- date: YYYY-MM-DD if a specific day is mentioned, otherwise null
-- time: HH:MM (24h) if a specific time is mentioned, otherwise null
+For each task return these fields:
+- text: a short, clear task description. Keep it in the SAME language the user wrote it in — do NOT translate. Tidy it up but preserve the meaning.
+- priority: "High", "Medium", or "Low" based on urgency/importance.
+- date: the start date as YYYY-MM-DD if a specific day is mentioned, otherwise null. Resolve all relative dates against today (${today}).
+- time: HH:MM in 24-hour format if a specific time is mentioned, otherwise null.
+- recurrence: "daily", "weekly", or "monthly" if the task repeats, otherwise null.
+
+Understand date, time, and recurrence cues in BOTH English and Bahasa Indonesia, for example:
+- Dates: "today"/"hari ini", "tomorrow"/"besok", "day after tomorrow"/"lusa", "next week"/"minggu depan", and weekday names in both languages (Monday/Senin, Tuesday/Selasa, Wednesday/Rabu, Thursday/Kamis, Friday/Jumat, Saturday/Sabtu, Sunday/Minggu).
+- Times: "3pm"/"jam 3 sore" -> 15:00, "morning"/"pagi", "noon"/"siang", "evening"/"sore", "night"/"malam". Note Indonesian half-hour phrasing: "setengah 8" means 7:30 (half BEFORE 8), so "jam setengah 8 malam" -> 19:30.
+- Recurrence: "every day"/"daily"/"setiap hari"/"tiap hari" -> "daily"; "every week"/"weekly"/"setiap minggu"/"mingguan" -> "weekly"; "every month"/"monthly"/"setiap bulan"/"bulanan" -> "monthly". A repeat tied to a weekday (e.g. "every Monday"/"setiap Senin") is "weekly" — also set date to the next matching weekday.
+
+If a recurring task has no explicit start day, leave date as null (it will start today).
 
 Brain dump:
 "${text}"
 
 Respond ONLY with a valid JSON array, no explanation, no markdown, no backticks. Example:
-[{"text":"Call dentist","priority":"High","date":null,"time":null}]`
+[{"text":"Call dentist","priority":"High","date":null,"time":null,"recurrence":null},{"text":"Minum obat pagi","priority":"High","date":null,"time":"08:00","recurrence":"daily"}]`
 
   try {
     const response = await fetch(
