@@ -12,6 +12,7 @@ export function BrainDump({ onAccept }) {
   const [processing, setProcessing] = useState(false)
   const [tasks, setTasks] = useState(null)
   const [error, setError] = useState(null)
+  const [lang, setLang] = useState('en-US')
   const recognitionRef = useRef(null)
 
   function reset() {
@@ -28,7 +29,7 @@ export function BrainDump({ onAccept }) {
     const recognition = new SR()
     recognition.continuous = true
     recognition.interimResults = false
-    recognition.lang = 'en-US'
+    recognition.lang = lang
     recognitionRef.current = recognition
 
     recognition.onresult = (e) => {
@@ -106,6 +107,20 @@ export function BrainDump({ onAccept }) {
                 <span className="bd-pulse" /> Listening...
               </div>
             )}
+          </div>
+
+          <div className="bd-lang-row">
+            <span className="bd-lang-label">Voice language</span>
+            <div className="bd-lang-toggle">
+              <button
+                className={lang === 'en-US' ? 'active' : ''}
+                onClick={() => setLang('en-US')}
+              >EN</button>
+              <button
+                className={lang === 'id-ID' ? 'active' : ''}
+                onClick={() => setLang('id-ID')}
+              >ID</button>
+            </div>
           </div>
 
           <div className="bd-actions">

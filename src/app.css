@@ -7,9 +7,11 @@ body {
 }
 
 .app {
-  width: 100%; max-width: 430px; min-height: 100svh;
+  width: 100%; max-width: 430px;
+  height: 100svh; /* fixed to the small viewport so dimensions stay stable */
   background: #fff;
   display: flex; flex-direction: column;
+  overflow: hidden; /* inner regions scroll, not the whole app */
 }
 
 /* Top bar */
@@ -60,7 +62,7 @@ body {
 
 /* Task list */
 .task-list {
-  flex: 1; padding: 12px; display: flex;
+  flex: 1; min-height: 0; padding: 12px; display: flex;
   flex-direction: column; gap: 6px; overflow-y: auto;
 }
 
@@ -152,7 +154,7 @@ body {
   padding: 10px 12px 24px;
   border-top: 0.5px solid #e5e4df;
   background: #fff;
-  position: sticky; bottom: 0;
+  flex-shrink: 0;
 }
 
 .input-row {
@@ -565,6 +567,30 @@ body {
   50% { opacity: 0.4; transform: scale(0.7); }
 }
 
+.bd-lang-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+}
+
+.bd-lang-label {
+  font-size: 12px; color: #aaa; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.bd-lang-toggle {
+  display: flex; gap: 4px;
+}
+
+.bd-lang-toggle button {
+  font-size: 12px; padding: 4px 12px;
+  border-radius: 20px; border: 0.5px solid #d3d1c7;
+  background: transparent; color: #888; cursor: pointer;
+}
+
+.bd-lang-toggle button.active {
+  background: #534AB7; color: #fff; border-color: #534AB7;
+}
+
 .bd-actions {
   display: flex; gap: 10px;
 }
@@ -700,7 +726,7 @@ body {
 
 /* â”€â”€ Brain dump tab â”€â”€ */
 .bd-tab {
-  flex: 1; padding: 20px 16px;
+  flex: 1; min-height: 0; padding: 20px 16px;
   display: flex; flex-direction: column;
   gap: 14px; overflow-y: auto;
 }
@@ -718,7 +744,7 @@ body {
 
 /* â”€â”€ Journal list â”€â”€ */
 .journal-list {
-  flex: 1; display: flex; flex-direction: column;
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
   overflow-y: auto;
 }
 
@@ -817,7 +843,7 @@ body {
 
 /* â”€â”€ Journal editor â”€â”€ */
 .journal-editor {
-  flex: 1; display: flex; flex-direction: column;
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
   padding: 16px; gap: 14px; overflow-y: auto;
 }
 
