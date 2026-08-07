@@ -147,17 +147,6 @@ body {
 
 .delete-btn:hover { color: #e24b4a; }
 
-.edit-btn {
-  width: 22px; height: 22px; border-radius: 50%;
-  border: none; background: transparent;
-  color: #ccc; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; padding: 0;
-  transition: color 0.15s;
-}
-
-.edit-btn:hover { color: #534AB7; }
-
 /* Input area */
 .input-area {
   padding: 10px 12px 24px;
@@ -419,6 +408,25 @@ body {
 }
 
 .edit-save { width: 100%; margin-bottom: 8px; }
+
+.detail-date-chips {
+  display: flex; gap: 6px; margin-bottom: 8px;
+}
+
+.detail-chip {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 6px; border-radius: 10px;
+  border: 0.5px solid #e5e4df; background: #fff;
+  cursor: pointer; transition: all 0.1s;
+}
+
+.detail-chip.active {
+  border-color: #534AB7; background: #EEEDFE;
+}
+
+.detail-chip-label { font-size: 13px; color: #1a1a1a; }
+.detail-chip-sub { font-size: 11px; color: #aaa; }
+.detail-chip.active .detail-chip-label { color: #534AB7; }
 
 .loading {
   display: flex; align-items: center; justify-content: center;

@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { RescheduleSheet } from './RescheduleSheet'
+import { TaskDetailSheet } from './TaskDetailSheet'
 import { MonthView } from './MonthView'
 import { Auth } from './Auth'
 import { BrainDump } from './BrainDump'
 import { Journal } from './Journal'
-import { EditSheet } from './EditSheet'
 import { supabase } from './supabase'
 
 import {
@@ -125,7 +124,6 @@ export default function App() {
   const [showMonth, setShowMonth] = useState(false)
   const [reschedulingId, setReschedulingId] = useState(null)
   const [deletingTask, setDeletingTask] = useState(null)
-  const [editingTask, setEditingTask] = useState(null)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const inputRef = useRef(null)
@@ -270,52 +268,44 @@ useEffect(() => {
     await supabase.from('tasks').update({ priority }).eq('id', id)
   }
 
-  function openEdit(id) {
-    const task = tasks.find(t => t.id === id)
-    if (task) setEditingTask(task)
-  }
-
-  async function saveEdit(id, { text, time }) {
+  // Saves everything from the task detail sheet: name, time, and (for a single
+  // occurrence) the date. Name & time apply to the whole series if recurring;
+  // moving the date always affects just the one occurrence, like a calendar.
+  async function saveTaskDetails(id, { text, time, date }) {
     const task = Object.values(tasksByDay).flat().find(t => t.id === id)
-    setEditingTask(null)
+    setReschedulingId(null)
     if (!task || !text) return
 
-    if (task.recurrence) {
-      // Editing a recurring task updates the whole series, so occurrences stay
-      // consistent (and future generated ones inherit the new name/time).
-      const root = seriesRoot(task)
-      const ids = Object.values(tasksByDay).flat()
-        .filter(t => seriesRoot(t) === root).map(t => t.id)
-      setTasksByDay(prev => {
-        const next = {}
-        for (const day in prev) {
-          next[day] = prev[day].map(t => seriesRoot(t) === root ? { ...t, text, time } : t)
-        }
-        return next
-      })
-      if (ids.length) await supabase.from('tasks').update({ text, time }).in('id', ids)
-    } else {
-      setTasksByDay(prev => ({
-        ...prev,
-        [task.date_key]: (prev[task.date_key] || []).map(t => t.id === id ? { ...t, text, time } : t),
-      }))
-      await supabase.from('tasks').update({ text, time }).eq('id', id)
-    }
-  }
+    const root = seriesRoot(task)
+    const isSeries = !!task.recurrence
+    const matches = t => (isSeries ? seriesRoot(t) === root : t.id === id)
+    const dateChanged = date && date !== task.date_key
 
-  async function rescheduleTask(taskId, targetDateKey) {
-    const task = tasks.find(t => t.id === taskId)
-    if (!task) return
-    const targetTasks = tasksByDay[targetDateKey] || []
-    setTasksByDay(prev => ({
-      ...prev,
-      [dateKey]: (prev[dateKey] || []).filter(t => t.id !== taskId),
-      [targetDateKey]: [...targetTasks, { ...task, date_key: targetDateKey }],
-    }))
-    setReschedulingId(null)
-    await supabase.from('tasks')
-      .update({ date_key: targetDateKey, position: targetTasks.length })
-      .eq('id', taskId)
+    setTasksByDay(prev => {
+      const next = {}
+      for (const day in prev) {
+        next[day] = prev[day].map(t => matches(t) ? { ...t, text, time } : t)
+      }
+      if (dateChanged) {
+        const moving = next[task.date_key].find(t => t.id === id)
+        next[task.date_key] = next[task.date_key].filter(t => t.id !== id)
+        const targetArr = next[date] ? [...next[date]] : []
+        next[date] = [...targetArr, { ...moving, date_key: date, position: targetArr.length }]
+      }
+      return next
+    })
+
+    // Persist name/time (across the series if recurring).
+    const editIds = isSeries
+      ? Object.values(tasksByDay).flat().filter(t => seriesRoot(t) === root).map(t => t.id)
+      : [id]
+    if (editIds.length) await supabase.from('tasks').update({ text, time }).in('id', editIds)
+
+    // Persist the single-occurrence move.
+    if (dateChanged) {
+      const targetLen = (tasksByDay[date] || []).length
+      await supabase.from('tasks').update({ date_key: date, position: targetLen }).eq('id', id)
+    }
   }
 
   async function acceptBrainDumpTask(task) {
@@ -422,7 +412,7 @@ useEffect(() => {
                           <TaskCard key={t.id} task={t}
                             onToggle={toggleDone} onDelete={deleteTask}
                             onChangePriority={changePriority}
-                            onLongPress={setReschedulingId} onEdit={openEdit} />
+                            onLongPress={setReschedulingId} />
                         ))}
                       </div>
                     ))
@@ -430,7 +420,7 @@ useEffect(() => {
                       <TaskCard key={t.id} task={t}
                         onToggle={toggleDone} onDelete={deleteTask}
                         onChangePriority={changePriority}
-                        onLongPress={setReschedulingId} onEdit={openEdit} />
+                        onLongPress={setReschedulingId} />
                     ))
                 }
               </SortableContext>
@@ -502,19 +492,10 @@ useEffect(() => {
       </nav>
 
       {reschedulingId && (
-        <RescheduleSheet
-          taskText={tasks.find(t => t.id === reschedulingId)?.text}
-          currentDate={dateKey}
-          onReschedule={(date) => rescheduleTask(reschedulingId, date)}
+        <TaskDetailSheet
+          task={tasks.find(t => t.id === reschedulingId)}
+          onSave={(fields) => saveTaskDetails(reschedulingId, fields)}
           onClose={() => setReschedulingId(null)}
-        />
-      )}
-
-      {editingTask && (
-        <EditSheet
-          task={editingTask}
-          onSave={(fields) => saveEdit(editingTask.id, fields)}
-          onClose={() => setEditingTask(null)}
         />
       )}
 
