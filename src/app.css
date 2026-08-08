@@ -1,14 +1,17 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+html, body, #root { height: 100%; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #f5f4f0;
-  display: flex; justify-content: center;
 }
 
 .app {
   width: 100%; max-width: 430px;
-  height: 100svh; /* fixed to the small viewport so dimensions stay stable */
+  margin: 0 auto; /* center on wider screens; fills full width on phones */
+  height: 100%;
+  height: 100dvh; /* fill the real viewport (no grey gap); falls back to 100% */
   background: #fff;
   display: flex; flex-direction: column;
   overflow: hidden; /* inner regions scroll, not the whole app */
@@ -432,11 +435,11 @@ body {
 
 .loading {
   display: flex; align-items: center; justify-content: center;
-  height: 100svh; font-size: 15px; color: #aaa;
+  height: 100%; height: 100dvh; font-size: 15px; color: #aaa;
 }
 
 .auth-screen {
-  min-height: 100svh; display: flex;
+  min-height: 100%; min-height: 100dvh; display: flex;
   align-items: center; justify-content: center;
   background: #f5f4f0; padding: 24px;
 }
