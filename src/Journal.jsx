@@ -14,6 +14,11 @@ function formatTitle(dateKey) {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+// Today's date key in GMT+7 (WIB), matching the rest of the app.
+function gmt7Today() {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split('T')[0]
+}
+
 function stripHtml(html) {
   if (!html) return ''
   return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -261,6 +266,7 @@ export function Journal({ user }) {
   const [loading, setLoading] = useState(true)
   const [selectedId, setSelectedId] = useState(null)
   const [chartRange, setChartRange] = useState('month')
+  const [pickDate, setPickDate] = useState('')
 
   useEffect(() => { load() }, [])
 
@@ -273,19 +279,20 @@ export function Journal({ user }) {
     setLoading(false)
   }
 
-  async function newEntry() {
-    const today = new Date().toISOString().split('T')[0]
-    const existing = entries.find(e => e.date_key === today)
+  // Open (or create) the entry for a given date and go to the editor.
+  async function openEntry(dateKey) {
+    setPickDate('')
+    const existing = entries.find(e => e.date_key === dateKey)
     if (existing) { setSelectedId(existing.id); return }
     const entry = {
       id: Date.now().toString(),
       user_id: user.id,
-      date_key: today,
+      date_key: dateKey,
       content: '',
       mood: null,
       rating: null,
     }
-    setEntries(prev => [entry, ...prev])
+    setEntries(prev => [entry, ...prev].sort((a, b) => b.date_key.localeCompare(a.date_key)))
     setSelectedId(entry.id)
     await supabase.from('journal_entries').insert(entry)
   }
@@ -312,27 +319,14 @@ export function Journal({ user }) {
         <input
           type="date"
           className="journal-date-picker"
-          max={new Date().toISOString().split('T')[0]}
-          onChange={async e => {
-            const dateKey = e.target.value
-            if (!dateKey) return
-            e.target.value = ''
-            const existing = entries.find(en => en.date_key === dateKey)
-            if (existing) { setSelectedId(existing.id); return }
-            const entry = {
-              id: Date.now().toString(),
-              user_id: user.id,
-              date_key: dateKey,
-              content: '',
-              mood: null,
-              rating: null,
-            }
-            setEntries(prev => [entry, ...prev].sort((a, b) => b.date_key.localeCompare(a.date_key)))
-            setSelectedId(entry.id)
-            await supabase.from('journal_entries').insert(entry)
-          }}
+          value={pickDate}
+          max={gmt7Today()}
+          onChange={e => setPickDate(e.target.value)}
         />
-        <button className="journal-new-btn" onClick={newEntry}>+ Today</button>
+        <button
+          className="journal-new-btn"
+          onClick={() => openEntry(pickDate || gmt7Today())}
+        >{pickDate ? 'Open' : '+ Today'}</button>
       </div>
     </div>
 
