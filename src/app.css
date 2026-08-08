@@ -88,7 +88,9 @@ body {
   padding: 10px 10px;
   display: flex; align-items: center; gap: 8px;
   transition: opacity 0.2s;
-  touch-action: none;
+  /* Allow vertical scrolling over cards; dragging is initiated from the
+     drag handle (which keeps touch-action: none). */
+  touch-action: pan-y;
 }
 
 .task-card.done { opacity: 0.45; }
