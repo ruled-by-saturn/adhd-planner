@@ -127,7 +127,6 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const inputRef = useRef(null)
-  const touchStartX = useRef(null)
   const [activeTab, setActiveTab] = useState('tasks')
   const [newRecurrence, setNewRecurrence] = useState('')
 // remove: const [showBrainDump, setShowBrainDump] = useState(false)
@@ -368,13 +367,6 @@ useEffect(() => {
         return a.time.localeCompare(b.time)
       })
 
-  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX }
-  function onTouchEnd(e) {
-    if (touchStartX.current === null) return
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 60) setDayOffset(o => o + (diff > 0 ? 1 : -1))
-    touchStartX.current = null
-  }
 
   const grouped = PRIORITIES.reduce((acc, p) => {
     acc[p] = sortedTasks.filter(t => t.priority === p)
@@ -414,7 +406,7 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="task-list" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+          <div className="task-list">
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={sortedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                 {sortMode === 'priority'
