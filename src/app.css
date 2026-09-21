@@ -962,7 +962,10 @@ body {
 .rich-editor-wrap {
   border: 0.5px solid #e5e4df;
   border-radius: 12px; overflow: hidden;
-  flex: 1; display: flex; flex-direction: column;
+  display: flex; flex-direction: column;
+  /* Grow with the text instead of clamping to the leftover space — the
+     journal page is the scroller, so a clamped box just clips the entry. */
+  flex: 0 0 auto; min-height: 240px;
 }
 
 .rich-toolbar {
@@ -1054,7 +1057,7 @@ body {
 }
 
 .rich-editor {
-  min-height: 240px; flex: 1;
+  flex: 1;
   padding: 14px; font-size: 15px; line-height: 1.7;
   color: #1a1a1a; background: #fafaf8; outline: none;
   font-family: inherit;
