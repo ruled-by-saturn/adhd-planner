@@ -1017,6 +1017,30 @@ body {
   background: #f0eff9;
 }
 
+.rich-tidy-btn {
+  padding: 5px 10px; border-radius: 8px;
+  border: 0.5px solid #cdc9ee; background: #f0eff9;
+  font-size: 12px; color: #534AB7; cursor: pointer;
+  flex-shrink: 0; transition: opacity 0.15s;
+}
+
+.rich-tidy-btn:disabled { opacity: 0.5; cursor: default; }
+
+.rich-tidy-note {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; font-size: 12px; color: #888;
+  background: #f9f8f5;
+  border-bottom: 0.5px solid #e5e4df;
+}
+
+.rich-tidy-error { color: #e24b4a; }
+
+.rich-undo-btn {
+  font-size: 12px; padding: 2px 10px;
+  border-radius: 20px; border: 0.5px solid #d3d1c7;
+  background: #fff; color: #534AB7; cursor: pointer;
+}
+
 .rich-editor-body {
   position: relative; flex: 1;
   display: flex; flex-direction: column;

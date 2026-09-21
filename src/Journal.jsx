@@ -95,6 +95,9 @@ function RichEditor({ initialContent, onChange }) {
   const wantListening = useRef(false)
   const [listening, setListening] = useState(false)
   const [lang, setLang] = useState('en-US')
+  const [tidying, setTidying] = useState(false)
+  const [tidyError, setTidyError] = useState(null)
+  const [preTidyHtml, setPreTidyHtml] = useState(null)
 
   useEffect(() => {
     if (editorRef.current && !initialized.current) {
@@ -148,6 +151,7 @@ function RichEditor({ initialContent, onChange }) {
 
   function handleInput() {
     rememberCaret()
+    setPreTidyHtml(null)
     onChange(editorRef.current?.innerHTML || '')
   }
 
@@ -158,6 +162,69 @@ function RichEditor({ initialContent, onChange }) {
     const needsSpace = !/[\s]$/.test(el.innerText || '') && (el.innerText || '').length > 0
     document.execCommand('insertText', false, (needsSpace ? ' ' : '') + transcript)
     rememberCaret()
+    onChange(el.innerHTML || '')
+  }
+
+  // Tidying works on the text nodes rather than the HTML, so bold, quotes
+  // and links come back exactly as they were.
+  function textNodes() {
+    const el = editorRef.current
+    if (!el) return []
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    const nodes = []
+    let n
+    while ((n = walker.nextNode())) {
+      if (n.nodeValue.trim()) nodes.push(n)
+    }
+    return nodes
+  }
+
+  // The model likes to shift a fragment's leading/trailing space, which pushes
+  // whitespace inside <b>/<a> tags. The original edges are always right.
+  function keepEdges(original, tidied) {
+    const body = tidied.trim()
+    if (!body) return original
+    return original.match(/^\s*/)[0] + body + original.match(/\s*$/)[0]
+  }
+
+  async function tidy() {
+    const el = editorRef.current
+    const nodes = textNodes()
+    if (!el || !nodes.length) return
+
+    setTidying(true)
+    setTidyError(null)
+    const before = el.innerHTML
+
+    try {
+      const res = await fetch('/api/tidy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fragments: nodes.map(n => n.nodeValue) }),
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      if (data.fragments.length !== nodes.length) throw new Error('mismatch')
+
+      nodes.forEach((n, i) => {
+        n.nodeValue = keepEdges(n.nodeValue, data.fragments[i])
+      })
+      setPreTidyHtml(before)
+      savedRange.current = null
+      onChange(el.innerHTML || '')
+    } catch {
+      setTidyError('Could not tidy. Try again.')
+    } finally {
+      setTidying(false)
+    }
+  }
+
+  function undoTidy() {
+    const el = editorRef.current
+    if (!el || preTidyHtml === null) return
+    el.innerHTML = preTidyHtml
+    savedRange.current = null
+    setPreTidyHtml(null)
     onChange(el.innerHTML || '')
   }
 
@@ -257,8 +324,29 @@ function RichEditor({ initialContent, onChange }) {
           </svg>
           {listening ? 'Stop' : 'Speak'}
         </button>
+
+        <button
+          className="rich-tidy-btn"
+          title="Fix grammar and punctuation"
+          disabled={tidying}
+          onMouseDown={e => { e.preventDefault(); tidy() }}
+        >{tidying ? 'Tidying...' : 'Tidy up ✦'}</button>
         </div>
       </div>
+
+      {(preTidyHtml !== null || tidyError) && (
+        <div className="rich-tidy-note">
+          {tidyError
+            ? <span className="rich-tidy-error">{tidyError}</span>
+            : <>
+                <span>Grammar and punctuation tidied.</span>
+                <button
+                  className="rich-undo-btn"
+                  onMouseDown={e => { e.preventDefault(); undoTidy() }}
+                >Undo</button>
+              </>}
+        </div>
+      )}
       <div className="rich-editor-body">
         <div
           ref={editorRef}
