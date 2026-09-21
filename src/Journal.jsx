@@ -90,6 +90,11 @@ function ToolBtn({ onPress, title, children }) {
 function RichEditor({ initialContent, onChange }) {
   const editorRef = useRef(null)
   const initialized = useRef(false)
+  const savedRange = useRef(null)
+  const recognitionRef = useRef(null)
+  const wantListening = useRef(false)
+  const [listening, setListening] = useState(false)
+  const [lang, setLang] = useState('en-US')
 
   useEffect(() => {
     if (editorRef.current && !initialized.current) {
@@ -98,9 +103,42 @@ function RichEditor({ initialContent, onChange }) {
     }
   }, [])
 
+  // Stop dictation if the editor goes away mid-sentence.
+  useEffect(() => () => {
+    wantListening.current = false
+    recognitionRef.current?.stop()
+  }, [])
+
+  // Remember where the caret was so toolbar buttons (which steal focus)
+  // and dictation can put text back in the right place.
+  function rememberCaret() {
+    const sel = window.getSelection()
+    if (sel?.rangeCount && editorRef.current?.contains(sel.anchorNode)) {
+      savedRange.current = sel.getRangeAt(0).cloneRange()
+    }
+  }
+
+  function restoreCaret() {
+    const el = editorRef.current
+    if (!el) return
+    el.focus()
+    const sel = window.getSelection()
+    if (savedRange.current && el.contains(savedRange.current.startContainer)) {
+      sel.removeAllRanges()
+      sel.addRange(savedRange.current)
+    } else {
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      range.collapse(false)
+      sel.removeAllRanges()
+      sel.addRange(range)
+    }
+  }
+
   function exec(cmd, value = null) {
-    editorRef.current?.focus()
+    restoreCaret()
     document.execCommand(cmd, false, value)
+    handleInput()
   }
 
   function insertLink() {
@@ -109,7 +147,75 @@ function RichEditor({ initialContent, onChange }) {
   }
 
   function handleInput() {
+    rememberCaret()
     onChange(editorRef.current?.innerHTML || '')
+  }
+
+  function insertTranscript(transcript) {
+    const el = editorRef.current
+    if (!el || !transcript) return
+    restoreCaret()
+    const needsSpace = !/[\s]$/.test(el.innerText || '') && (el.innerText || '').length > 0
+    document.execCommand('insertText', false, (needsSpace ? ' ' : '') + transcript)
+    rememberCaret()
+    onChange(el.innerHTML || '')
+  }
+
+  function startRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    const recognition = new SR()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = lang
+    recognitionRef.current = recognition
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .slice(e.resultIndex)
+        .map(r => r[0].transcript).join(' ')
+        .trim()
+      insertTranscript(transcript)
+    }
+    recognition.onerror = () => {
+      wantListening.current = false
+      setListening(false)
+    }
+    // Mobile browsers cut recognition off after a pause — journalling has
+    // plenty of those, so resume until the user actually taps stop.
+    recognition.onend = () => {
+      if (wantListening.current) {
+        try { recognition.start() } catch { setListening(false) }
+      } else {
+        setListening(false)
+      }
+    }
+    recognition.start()
+  }
+
+  function toggleSpeech() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { alert('Speech recognition not supported in this browser'); return }
+    if (listening) {
+      wantListening.current = false
+      recognitionRef.current?.stop()
+      setListening(false)
+      return
+    }
+    rememberCaret()
+    wantListening.current = true
+    setListening(true)
+    startRecognition()
+  }
+
+  function changeLang(next) {
+    setLang(next)
+    if (listening) {
+      // Restart so the new language takes effect immediately.
+      wantListening.current = false
+      recognitionRef.current?.stop()
+      wantListening.current = true
+      setTimeout(() => { if (wantListening.current) startRecognition() }, 150)
+    }
   }
 
   return (
@@ -125,15 +231,52 @@ function RichEditor({ initialContent, onChange }) {
             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
           </svg>
         </ToolBtn>
+
+        <div className="rich-dictate-group">
+        <div className="rich-lang-toggle">
+          <button
+            className={lang === 'en-US' ? 'active' : ''}
+            onMouseDown={e => { e.preventDefault(); changeLang('en-US') }}
+          >EN</button>
+          <button
+            className={lang === 'id-ID' ? 'active' : ''}
+            onMouseDown={e => { e.preventDefault(); changeLang('id-ID') }}
+          >ID</button>
+        </div>
+
+        <button
+          className={`rich-mic-btn${listening ? ' active' : ''}`}
+          title={listening ? 'Stop dictation' : 'Dictate'}
+          onMouseDown={e => { e.preventDefault(); toggleSpeech() }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          {listening ? 'Stop' : 'Speak'}
+        </button>
+        </div>
       </div>
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        className="rich-editor"
-        data-placeholder={PLACEHOLDER}
-        onInput={handleInput}
-      />
+      <div className="rich-editor-body">
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          className="rich-editor"
+          data-placeholder={PLACEHOLDER}
+          onInput={handleInput}
+          onKeyUp={rememberCaret}
+          onMouseUp={rememberCaret}
+          onBlur={rememberCaret}
+        />
+        {listening && (
+          <div className="rich-listening-badge">
+            <span className="bd-pulse" /> Listening...
+          </div>
+        )}
+      </div>
     </div>
   )
 }
