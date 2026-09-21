@@ -1,5 +1,8 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
+/* No double-tap-to-zoom; taps here are always taps, never zoom gestures. */
+html { touch-action: manipulation; }
+
 html, body, #root { height: 100%; }
 
 body {
@@ -169,7 +172,7 @@ body {
 .input-row input {
   flex: 1; border: 0.5px solid #d3d1c7;
   border-radius: 10px; padding: 10px 14px;
-  font-size: 15px; background: #f9f8f5;
+  font-size: 16px; background: #f9f8f5;
   color: #1a1a1a; outline: none;
 }
 
@@ -202,7 +205,7 @@ body {
 .input-meta select, .time-input {
   flex: 1; border: 0.5px solid #d3d1c7;
   border-radius: 8px; padding: 6px 10px;
-  font-size: 13px; background: #f9f8f5; color: #1a1a1a;
+  font-size: 16px; background: #f9f8f5; color: #1a1a1a;
   -webkit-appearance: none; appearance: none;
   outline: none;
 }
@@ -371,7 +374,7 @@ body {
 .sheet-date-input {
   flex: 1; border: 0.5px solid #d3d1c7;
   border-radius: 10px; padding: 10px 12px;
-  font-size: 14px; background: #f9f8f5;
+  font-size: 16px; background: #f9f8f5;
   color: #1a1a1a; outline: none;
 }
 
@@ -405,7 +408,7 @@ body {
 
 .edit-input {
   border: 0.5px solid #d3d1c7; border-radius: 10px;
-  padding: 10px 12px; font-size: 14px;
+  padding: 10px 12px; font-size: 16px;
   background: #f9f8f5; color: #1a1a1a; outline: none;
 }
 
@@ -580,7 +583,7 @@ body {
 
 .bd-textarea {
   width: 100%; padding: 12px 14px;
-  font-size: 15px; line-height: 1.6;
+  font-size: 16px; line-height: 1.6;
   border: none; outline: none; resize: none;
   background: #f9f8f5; color: #1a1a1a;
   font-family: inherit;
@@ -932,7 +935,7 @@ body {
 .journal-textarea {
   flex: 1; min-height: 280px;
   border: 0.5px solid #e5e4df; border-radius: 12px;
-  padding: 14px; font-size: 15px; line-height: 1.7;
+  padding: 14px; font-size: 16px; line-height: 1.7;
   font-family: inherit; color: #1a1a1a;
   background: #fafaf8; resize: none; outline: none;
 }
@@ -947,7 +950,7 @@ body {
 .recurrence-select {
   flex: 0.9; border: 0.5px solid #d3d1c7;
   border-radius: 8px; padding: 6px 10px;
-  font-size: 13px; background: #f9f8f5; color: #1a1a1a;
+  font-size: 16px; background: #f9f8f5; color: #1a1a1a;
   -webkit-appearance: none; appearance: none; outline: none;
 }
 
@@ -1058,7 +1061,7 @@ body {
 
 .rich-editor {
   flex: 1;
-  padding: 14px; font-size: 15px; line-height: 1.7;
+  padding: 14px; font-size: 16px; line-height: 1.7;
   color: #1a1a1a; background: #fafaf8; outline: none;
   font-family: inherit;
 }
@@ -1099,7 +1102,7 @@ body {
 
 .journal-date-picker {
   border: 0.5px solid #d3d1c7; border-radius: 10px;
-  padding: 6px 10px; font-size: 13px;
+  padding: 6px 10px; font-size: 16px;
   background: #f9f8f5; color: #1a1a1a;
   outline: none; cursor: pointer;
 }
