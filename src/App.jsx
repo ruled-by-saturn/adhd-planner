@@ -128,6 +128,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const inputRef = useRef(null)
   const [activeTab, setActiveTab] = useState('tasks')
+  const [showDump, setShowDump] = useState(false)
   const [newRecurrence, setNewRecurrence] = useState('')
 // remove: const [showBrainDump, setShowBrainDump] = useState(false)
 
@@ -439,6 +440,13 @@ useEffect(() => {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addTask()}
                 placeholder="Add a task..." />
+              <button className="dump-btn" onClick={() => setShowDump(true)} title="Brain dump">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21h6"/>
+                  <path d="M12 3a6 6 0 0 1 6 6c0 2.5-1.5 4.5-3 6H9c-1.5-1.5-3-3.5-3-6a6 6 0 0 1 6-6z"/>
+                  <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
+                </svg>
+              </button>
               <button className="add-btn" onClick={addTask}>+</button>
             </div>
            <div className="input-meta">
@@ -495,6 +503,15 @@ useEffect(() => {
           <span>Journal</span>
         </button>
       </nav>
+
+      {showDump && (
+        <div className="bd-overlay" onClick={() => setShowDump(false)}>
+          <div className="bd-sheet" onClick={e => e.stopPropagation()}>
+            <div className="sheet-handle" />
+            <BrainDump onAccept={acceptBrainDumpTask} onClose={() => setShowDump(false)} />
+          </div>
+        </div>
+      )}
 
       {reschedulingId && (
         <TaskDetailSheet

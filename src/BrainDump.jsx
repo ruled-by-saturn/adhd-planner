@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const PILL = {
   High:   { bg: '#FAECE7', color: '#993C1D' },
@@ -6,7 +6,7 @@ const PILL = {
   Low:    { bg: '#EEEDFE', color: '#534AB7' },
 }
 
-export function BrainDump({ onAccept }) {
+export function BrainDump({ onAccept, onClose }) {
   const [text, setText] = useState('')
   const [listening, setListening] = useState(false)
   const [processing, setProcessing] = useState(false)
@@ -14,6 +14,8 @@ export function BrainDump({ onAccept }) {
   const [error, setError] = useState(null)
   const [lang, setLang] = useState('en-US')
   const recognitionRef = useRef(null)
+
+  useEffect(() => () => recognitionRef.current?.stop(), [])
 
   function reset() {
     setText('')
@@ -81,15 +83,20 @@ export function BrainDump({ onAccept }) {
   const allDone = tasks !== null && tasks.length === 0
 
   return (
-    <div className="bd-tab">
+    <div className={`bd-tab${onClose ? ' in-sheet' : ''}`}>
       <div className="bd-tab-header">
         <div>
           <div className="bd-title">Brain dump</div>
           <div className="bd-sub">Say or type anything on your mind</div>
         </div>
-        {(tasks || text) && (
-          <button className="bd-reset-btn" onClick={reset}>Clear</button>
-        )}
+        <div className="bd-header-actions">
+          {(tasks || text) && (
+            <button className="bd-reset-btn" onClick={reset}>Clear</button>
+          )}
+          {onClose && (
+            <button className="bd-close-btn" onClick={onClose} title="Close">×</button>
+          )}
+        </div>
       </div>
 
       {!tasks && (
