@@ -83,7 +83,7 @@ export function BrainDump({ onAccept, onClose }) {
   const allDone = tasks !== null && tasks.length === 0
 
   return (
-    <div className={`bd-tab${onClose ? ' in-sheet' : ''}`}>
+    <div className="bd-tab">
       <div className="bd-tab-header">
         <div>
           <div className="bd-title">Brain dump</div>
@@ -93,9 +93,7 @@ export function BrainDump({ onAccept, onClose }) {
           {(tasks || text) && (
             <button className="bd-reset-btn" onClick={reset}>Clear</button>
           )}
-          {onClose && (
-            <button className="bd-close-btn" onClick={onClose} title="Close">×</button>
-          )}
+          <button className="bd-close-btn" onClick={onClose} title="Close">×</button>
         </div>
       </div>
 

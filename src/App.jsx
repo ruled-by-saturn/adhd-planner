@@ -467,23 +467,11 @@ useEffect(() => {
         </>
       )}
 
-      {activeTab === 'braindump' && (
-        <BrainDump onAccept={acceptBrainDumpTask} />
-      )}
-
       {activeTab === 'journal' && (
         <Journal user={user} />
       )}
 
       <nav className="tab-bar">
-        <button className={`tab-btn${activeTab === 'braindump' ? ' active' : ''}`} onClick={() => setActiveTab('braindump')}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21h6"/>
-            <path d="M12 3a6 6 0 0 1 6 6c0 2.5-1.5 4.5-3 6H9c-1.5-1.5-3-3.5-3-6a6 6 0 0 1 6-6z"/>
-            <path d="M9 17v1a3 3 0 0 0 6 0v-1"/>
-          </svg>
-          <span>Dump</span>
-        </button>
         <button className={`tab-btn${activeTab === 'tasks' ? ' active' : ''}`} onClick={() => setActiveTab('tasks')}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="8" y1="6" x2="21" y2="6"/>

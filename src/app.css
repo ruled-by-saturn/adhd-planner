@@ -763,13 +763,7 @@ body {
 
 /* â”€â”€ Brain dump tab â”€â”€ */
 .bd-tab {
-  flex: 1; min-height: 0; padding: 20px 16px;
-  display: flex; flex-direction: column;
-  gap: 14px; overflow-y: auto;
-}
-
-.bd-tab.in-sheet {
-  flex: none; padding: 0; overflow: visible;
+  display: flex; flex-direction: column; gap: 14px;
 }
 
 .bd-tab-header {
