@@ -180,6 +180,12 @@ body {
   flex-shrink: 0; padding: 0 2px;
 }
 
+.save-error button.save-error-retry {
+  font-size: 12px; padding: 3px 12px;
+  border: 0.5px solid #d8a894; border-radius: 20px;
+  background: #fff; color: #993C1D;
+}
+
 .input-row {
   display: flex; gap: 8px; align-items: center;
 }

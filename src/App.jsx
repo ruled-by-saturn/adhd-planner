@@ -142,20 +142,36 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('tasks')
   const [showDump, setShowDump] = useState(false)
   const [saveError, setSaveError] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const [newRecurrence, setNewRecurrence] = useState('')
 // remove: const [showBrainDump, setShowBrainDump] = useState(false)
 
+  const loadedFor = useRef(null)
+
   useEffect(() => {
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  function sync(session) {
+    const uid = session?.user?.id ?? null
     setUser(session?.user ?? null)
-    if (session?.user) loadTasks(session.user.id)
-    else setLoading(false)
-  })
+    if (!uid) {
+      loadedFor.current = null
+      setTasksByDay({})
+      setLoading(false)
+      return
+    }
+    // getSession() and the INITIAL_SESSION event both land here, and every
+    // token refresh fires again — only actually refetch when the user changes.
+    if (loadedFor.current === uid) return
+    loadedFor.current = uid
+    loadTasks(uid)
+  }
+
+  supabase.auth.getSession().then(({ data: { session } }) => sync(session))
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-    setUser(session?.user ?? null)
-    if (session?.user) loadTasks(session.user.id)
-    else { setTasksByDay({}); setLoading(false) }
+    // This callback runs while auth-js holds its lock, so a Supabase query
+    // started here queues behind that lock (the library's own docs warn about
+    // deadlocking here). Hand the work to a later tick instead.
+    setTimeout(() => sync(session), 0)
   })
 
   return () => subscription.unsubscribe()
@@ -167,7 +183,16 @@ async function loadTasks(userId) {
     .eq('user_id', userId)
     .order('position')
     .order('id')
-  if (error) { console.error(error); setLoading(false); return }
+  if (error) {
+    // A failed load used to leave an empty task list with no explanation,
+    // which is indistinguishable from "my tasks are gone".
+    console.error('loadTasks failed:', error)
+    loadedFor.current = null
+    setLoadError(error.message || 'Could not load your tasks.')
+    setLoading(false)
+    return
+  }
+  setLoadError(null)
   const byDay = {}
   data.forEach(task => {
     if (!byDay[task.date_key]) byDay[task.date_key] = []
@@ -473,6 +498,12 @@ useEffect(() => {
           </div>
 
           <div className="input-area">
+            {loadError && (
+              <div className="save-error">
+                <span>Could not load tasks: {loadError}</span>
+                <button className="save-error-retry" onClick={() => user && loadTasks(user.id)}>Retry</button>
+              </div>
+            )}
             {saveError && (
               <div className="save-error">
                 <span>Not saved: {saveError}</span>
