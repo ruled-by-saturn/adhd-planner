@@ -129,6 +129,7 @@ export default function App() {
   const inputRef = useRef(null)
   const [activeTab, setActiveTab] = useState('tasks')
   const [showDump, setShowDump] = useState(false)
+  const [saveError, setSaveError] = useState(null)
   const [newRecurrence, setNewRecurrence] = useState('')
 // remove: const [showBrainDump, setShowBrainDump] = useState(false)
 
@@ -197,15 +198,35 @@ useEffect(() => {
     text: input.trim(),
     priority: newPriority,
     done: false,
-    time: newTime,
+    // An empty string is not a valid value for a Postgres `time` column;
+    // null is accepted whatever the column type, and reads back as falsy.
+    time: newTime || null,
     position: tasks.length,
     user_id: user.id,
     recurrence: newRecurrence || null,
   }
+  const typed = { input, time: newTime, recurrence: newRecurrence }
   setInput('')
   setNewTime('')
   setNewRecurrence('')
-  await supabase.from('tasks').insert(task)
+  setSaveError(null)
+  if (!task.recurrence) setTasks([...tasks, task])
+
+  const { error } = await supabase.from('tasks').insert(task)
+  if (error) {
+    // Don't leave a task on screen that isn't in the database — it would
+    // look saved right up until the next time the app is opened.
+    console.error('addTask failed:', error)
+    setTasksByDay(prev => ({
+      ...prev,
+      [dateKey]: (prev[dateKey] || []).filter(t => t.id !== task.id),
+    }))
+    setInput(typed.input)
+    setNewTime(typed.time)
+    setNewRecurrence(typed.recurrence)
+    setSaveError(error.message || 'Could not save that task.')
+    return
+  }
 
   if (task.recurrence) {
     // Materialize the rest of the series across the horizon right away, so it
@@ -216,8 +237,6 @@ useEffect(() => {
     if (inserts.length) {
       await supabase.from('tasks').upsert(inserts, { onConflict: 'id', ignoreDuplicates: true })
     }
-  } else {
-    setTasks([...tasks, task])
   }
 }
 
@@ -318,12 +337,17 @@ useEffect(() => {
     text: task.text,
     priority: task.priority,
     done: false,
-    time: task.time || '',
+    time: task.time || null,
     position: existing.length,
     user_id: user.id,
     recurrence,
   }
-  await supabase.from('tasks').insert(newTask)
+  const { error } = await supabase.from('tasks').insert(newTask)
+  if (error) {
+    console.error('acceptBrainDumpTask failed:', error)
+    setSaveError(error.message || 'Could not save that task.')
+    return
+  }
 
   if (recurrence) {
     // Fan the recurring task out across the horizon, same as adding one manually.
@@ -435,6 +459,12 @@ useEffect(() => {
           </div>
 
           <div className="input-area">
+            {saveError && (
+              <div className="save-error">
+                <span>Not saved: {saveError}</span>
+                <button onClick={() => setSaveError(null)}>×</button>
+              </div>
+            )}
             <div className="input-row">
               <input ref={inputRef} value={input}
                 onChange={e => setInput(e.target.value)}
