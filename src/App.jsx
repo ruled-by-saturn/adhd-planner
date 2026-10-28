@@ -50,6 +50,18 @@ function seriesRoot(task) {
   return task.id.includes('__') ? task.id.split('__')[0] : task.id
 }
 
+// Two devices both pick a position from their own view of a day, so duplicate
+// positions are normal. Postgres returns tied rows in arbitrary order, which is
+// why a day can come back shuffled differently on each device — so reads are
+// tie-broken by id, and each day is renumbered in memory after loading.
+function nextPosition(dayTasks) {
+  return dayTasks.reduce((max, t) => Math.max(max, (t.position ?? -1) + 1), 0)
+}
+
+function renumber(dayTasks) {
+  return dayTasks.map((t, i) => (t.position === i ? t : { ...t, position: i }))
+}
+
 // Materialize any missing occurrences of every recurring series up to uptoKey.
 // Forward-fills from each series' latest existing instance, so deleting a single
 // past/middle occurrence never resurrects it.
@@ -79,7 +91,7 @@ function generateOccurrences(byDay, uptoKey) {
           priority: latest.priority,
           done: false,
           time: latest.time,
-          position: dayArr.length,
+          position: nextPosition(dayArr),
           user_id: latest.user_id,
           recurrence: latest.recurrence,
         }
@@ -154,12 +166,14 @@ async function loadTasks(userId) {
     .from('tasks').select('*')
     .eq('user_id', userId)
     .order('position')
+    .order('id')
   if (error) { console.error(error); setLoading(false); return }
   const byDay = {}
   data.forEach(task => {
     if (!byDay[task.date_key]) byDay[task.date_key] = []
     byDay[task.date_key].push(task)
   })
+  for (const day in byDay) byDay[day] = renumber(byDay[day])
 
   // Fill in recurring occurrences for the rolling horizon.
   const { next, inserts } = generateOccurrences(byDay, getDateKey(HORIZON_DAYS))
@@ -201,7 +215,7 @@ useEffect(() => {
     // An empty string is not a valid value for a Postgres `time` column;
     // null is accepted whatever the column type, and reads back as falsy.
     time: newTime || null,
-    position: tasks.length,
+    position: nextPosition(tasks),
     user_id: user.id,
     recurrence: newRecurrence || null,
   }
@@ -309,7 +323,7 @@ useEffect(() => {
         const moving = next[task.date_key].find(t => t.id === id)
         next[task.date_key] = next[task.date_key].filter(t => t.id !== id)
         const targetArr = next[date] ? [...next[date]] : []
-        next[date] = [...targetArr, { ...moving, date_key: date, position: targetArr.length }]
+        next[date] = [...targetArr, { ...moving, date_key: date, position: nextPosition(targetArr) }]
       }
       return next
     })
@@ -322,8 +336,8 @@ useEffect(() => {
 
     // Persist the single-occurrence move.
     if (dateChanged) {
-      const targetLen = (tasksByDay[date] || []).length
-      await supabase.from('tasks').update({ date_key: date, position: targetLen }).eq('id', id)
+      const targetPos = nextPosition(tasksByDay[date] || [])
+      await supabase.from('tasks').update({ date_key: date, position: targetPos }).eq('id', id)
     }
   }
 
@@ -338,7 +352,7 @@ useEffect(() => {
     priority: task.priority,
     done: false,
     time: task.time || null,
-    position: existing.length,
+    position: nextPosition(existing),
     user_id: user.id,
     recurrence,
   }
